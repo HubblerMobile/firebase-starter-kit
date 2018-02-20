@@ -100,7 +100,7 @@ public class SignInActivity extends AppCompatActivity implements
 
                     MainActivity mainActivity = new MainActivity();
                     FirebaseUser registeredUser = task.getResult().getUser();
-                    mainActivity.AddUserToDatbase(registeredUser);
+//                    mainActivity.AddUserToDatbase(registeredUser);
                     Intent mainIntent = new Intent(SignInActivity.this,MainActivity.class);
                     startActivity(mainIntent);
                     finish();
@@ -128,6 +128,7 @@ public class SignInActivity extends AppCompatActivity implements
                 firebaseAuthWithGoogle(account);
             } else {
                 // Google Sign-In failed
+                Toast.makeText(this, "Google Sign-In failed", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Google Sign-In failed.");
             }
         }
@@ -151,6 +152,7 @@ public class SignInActivity extends AppCompatActivity implements
                                     Toast.LENGTH_SHORT).show();
                         }
                         else {
+
                             startActivity(new Intent(SignInActivity.this, MainActivity.class));
                             finish();
                         }

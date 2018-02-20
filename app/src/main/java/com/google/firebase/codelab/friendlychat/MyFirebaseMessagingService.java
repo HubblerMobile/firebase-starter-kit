@@ -15,20 +15,35 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-public class MyFirebaseMessagingService {
+import java.util.Map;
+
+public class MyFirebaseMessagingService extends FirebaseMessagingService{
 
     private static final String TAG = "MyFMService";
 
     public void onMessageReceived(RemoteMessage remoteMessage) {
         // Handle data payload of FCM messages.
+        if(remoteMessage.getData().size() > 0) {
+            Map<String,String> payload = remoteMessage.getData();
+            showNotification(payload);
+        }
         Log.d(TAG, "FCM Message Id: " + remoteMessage.getMessageId());
         Log.d(TAG, "FCM Notification Message: " + remoteMessage.getNotification());
         Log.d(TAG, "FCM Data Message: " + remoteMessage.getData());
     }
+
+    private void showNotification(Map<String, String> payload) {
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        Log.i(TAG, "showNotification: Showing Notification....PLZ CHECK");
+    }
+
+
 
 }

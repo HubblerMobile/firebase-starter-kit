@@ -67,6 +67,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.storage.FirebaseStorage;
@@ -119,7 +120,7 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
     public static final String TYPING_STATUS = "users_typing";
-    public static final String USERS_AVAILABLE = "users-list";
+    public static final String USERS_AVAILABLE = "usersList";
     private static final int REQUEST_INVITE = 1;
     private static final int REQUEST_IMAGE = 2;
     private static final String LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif";
@@ -144,6 +145,13 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        messagesRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);            //Firebase message branch
+        messagesRef.keepSynced(true);
+        notificationRef = mFirebaseDatabaseReference.child("Notification");
+        typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
+        usersRef = mFirebaseDatabaseReference.child(USERS_AVAILABLE);
+
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -165,8 +173,6 @@ public class MainActivity extends AppCompatActivity
         mLinearLayoutManager.setStackFromEnd(true);
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-
         SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
             @Override
             public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
@@ -178,12 +184,6 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-         messagesRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);            //Firebase message branch
-         messagesRef.keepSynced(true);
-        notificationRef = mFirebaseDatabaseReference.child("Notification");
-        typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
-        usersRef = mFirebaseDatabaseReference.child(USERS_AVAILABLE);
-
         typingStatusRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity
                     return;
                 userWhoAreTyping = (Map<String, String>) dataSnapshot.getValue();
                 Log.i(TAG, "onDataChange: dict_usersTyping "+userWhoAreTyping);
-//                Log.i(TAG, "onDataChange: User who are typing "+userWhoAreTyping);
+                Log.i(TAG, "onDataChange: User who are typing "+userWhoAreTyping);
 
 
                 if(userWhoAreTyping==null)
@@ -562,8 +562,9 @@ public class MainActivity extends AppCompatActivity
             finish();
             return;
         } else {
-
-            AddUserToDatbase(mFirebaseUser);
+            String deviceToken = FirebaseInstanceId.getInstance().getToken();
+            String uidOfUser = mFirebaseUser.getUid();
+            UpdateUserToken(uidOfUser,deviceToken);
             mUsername = mFirebaseUser.getDisplayName();
             if (mFirebaseUser.getPhotoUrl() != null) {
                 mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
@@ -571,8 +572,22 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void AddUserToDatbase(final FirebaseUser mFirebaseUser) {
+    /**
+     *
+     * @param uidOfUser (key)add the uid of user to firebase database
+     * @param UserToken  (value) puts userToken as value to uid.
+     */
+    public void UpdateUserToken(String uidOfUser,String UserToken) {
 
+        Map<String,Object> tokenIdForDB = new HashMap<>();
+        tokenIdForDB.put("tokenId",UserToken);
+        usersRef.child(uidOfUser).updateChildren(tokenIdForDB);
+//        FirebaseDatabase.getInstance().getReference().child("dummyKeyVal").setValue("tempKeeey");
+//        if(usersRef==null)
+//        {
+//            usersRef.child("abcdddddd").child("jkjlkjlk").setValue("jsudesh");
+//        }
+//        usersRef.child(uidOfUser).child("token").setValue(tokenIdForDB);
 //       if(usersRef!=null)
 //       {
 //           usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
