@@ -100,6 +100,7 @@ public class MainActivity extends AppCompatActivity
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
     private Map<String,String> userWhoAreTyping = new HashMap<>();
+
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         ImageView messageImageView;
@@ -166,8 +167,8 @@ public class MainActivity extends AppCompatActivity
         getCurrentUser();
 
         // Initialize ProgressBar and RecyclerView.
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
+        mProgressBar = findViewById(R.id.progressBar);
+        mMessageRecyclerView = findViewById(R.id.messageRecyclerView);
         typingStatus = findViewById(R.id.typingStatus);
         mLinearLayoutManager = new LinearLayoutManager(this);
         mLinearLayoutManager.setStackFromEnd(true);

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="16dp"
+    android:paddingLeft="14dp"
+    android:paddingRight="14dp"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.google.firebase.codelab.friendlychat.SelectUserToChat">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/messageRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/typingStatus"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true" />
+
+</RelativeLayout>

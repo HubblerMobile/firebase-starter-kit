@@ -39,6 +39,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 public class SignInActivity extends AppCompatActivity implements
         GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
@@ -101,6 +102,9 @@ public class SignInActivity extends AppCompatActivity implements
                     MainActivity mainActivity = new MainActivity();
                     FirebaseUser registeredUser = task.getResult().getUser();
 //                    mainActivity.AddUserToDatbase(registeredUser);
+                    String deviceToken = FirebaseInstanceId.getInstance().getToken();
+                    String uidOfUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    mainActivity.UpdateUserToken(uidOfUser,deviceToken);
                     Intent mainIntent = new Intent(SignInActivity.this,MainActivity.class);
                     startActivity(mainIntent);
                     finish();
@@ -172,7 +176,6 @@ public class SignInActivity extends AppCompatActivity implements
                 String password = mPassword.getEditText().getText().toString();
                 register_user(displayName,email,password);
                 break;
-
         }
     }
 
