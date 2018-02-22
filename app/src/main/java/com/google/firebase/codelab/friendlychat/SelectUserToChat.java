@@ -1,5 +1,6 @@
 package com.google.firebase.codelab.friendlychat;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -22,6 +23,7 @@ import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.firebase.ui.database.SnapshotParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -53,10 +55,6 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
             this.viewItem = itemView;
         }
 
-        public void bindToUserViewHolder(UserObject userObject, View.OnClickListener clickListener) {
-
-            // viewItem.setOnClickListener(clickListener);
-        }
     }
 
     private static final String TAG = "MainActivity";
@@ -101,7 +99,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                         .setQuery(usersRef, parser)
                         .build();
 
-//FIREBASE RECYLER ADAPTER
+    //FIREBASE RECYLER ADAPTER
         mFirebaseAdapter = new FirebaseRecyclerAdapter<UserObject, UserViewHolder>(options) {
             @Override
             public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -125,17 +123,22 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                 viewHolder.userDisplayNameTextView.setText(userObject.getName());
 
                 viewHolder.viewItem.setOnClickListener(new View.OnClickListener() {
+
                     @Override
                     public void onClick(View view) {
+
                         DatabaseReference firebaseAdapterRef = mFirebaseAdapter.getRef(position);
 
                         firebaseAdapterRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
 
-                                String name = dataSnapshot.child("name").getValue().toString();
-                                Toast.makeText(SelectUserToChat.this, "Name is "+name, Toast.LENGTH_SHORT).show();
-
+                                String receiver = dataSnapshot.getKey();
+//                                Toast.makeText(SelectUserToChat.this, "Name is "+receiver, Toast.LENGTH_SHORT).show();
+                                Intent myIntent = new Intent(SelectUserToChat.this, OneToOneChat.class);
+                                myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
+                                myIntent.putExtra("receiver",receiver);
+                                SelectUserToChat.this.startActivity(myIntent);
                             }
 
                             @Override
@@ -146,12 +149,6 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                     }
                 });
 
-                viewHolder.bindToUserViewHolder(userObject, new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-
-                    }
-                });
                 if (userObject.getPhotoUrl() == null) {                                 //Default profile pic
                     //Default Profile Icon
                     viewHolder.userProfileImageView.setImageDrawable(ContextCompat.getDrawable(SelectUserToChat.this,

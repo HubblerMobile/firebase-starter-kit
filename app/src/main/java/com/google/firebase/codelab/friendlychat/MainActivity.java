@@ -90,23 +90,6 @@ public class MainActivity extends AppCompatActivity
     private List<String> usersTyping = new ArrayList<String>();
     private Map<String,String> userWhoAreTyping = new HashMap<>();
 
-    public static class MessageViewHolder extends RecyclerView.ViewHolder {
-        TextView messageTextView;
-        ImageView messageImageView;
-        TextView messengerTextView;
-        CircleImageView messengerImageView;
-
-
-
-        public MessageViewHolder(View v) {
-            super(v);
-            messageTextView = (TextView) itemView.findViewById(R.id.status);
-            messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
-            messengerTextView = (TextView) itemView.findViewById(R.id.userName);
-            messengerImageView = (CircleImageView) itemView.findViewById(R.id.userProfilePic);
-        }
-    }
-
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
     public static final String TYPING_STATUS = "users_typing";
@@ -131,6 +114,22 @@ public class MainActivity extends AppCompatActivity
     private ImageView mAddMessageImageView;
     private TextView typingStatus;
     boolean isDelayCheckRunning = false;
+
+    public static class MessageViewHolder extends RecyclerView.ViewHolder {
+        TextView messageTextView;
+        ImageView messageImageView;
+        TextView messengerTextView;
+        CircleImageView messengerImageView;
+
+
+        public MessageViewHolder(View v) {
+            super(v);
+            messageTextView = (TextView) itemView.findViewById(R.id.status);
+            messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
+            messengerTextView = (TextView) itemView.findViewById(R.id.userName);
+            messengerImageView = (CircleImageView) itemView.findViewById(R.id.userProfilePic);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

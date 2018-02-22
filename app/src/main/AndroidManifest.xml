@@ -45,6 +45,10 @@
         [END firebase_service]
         <activity android:name=".MainActivity" />
         <activity android:name=".SelectUserToChat"></activity>
+        <activity android:name=".OneToOneChat"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+
+        </activity>
     </application>
 
 </manifest>
