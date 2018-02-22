@@ -28,8 +28,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.InputFilter;
-import android.text.LoginFilter;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -55,11 +53,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.appindexing.Action;
-import com.google.firebase.appindexing.FirebaseAppIndex;
-import com.google.firebase.appindexing.Indexable;
-import com.google.firebase.appindexing.builders.Indexables;
-import com.google.firebase.appindexing.builders.PersonBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -68,15 +61,11 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,10 +100,10 @@ public class MainActivity extends AppCompatActivity
 
         public MessageViewHolder(View v) {
             super(v);
-            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
+            messageTextView = (TextView) itemView.findViewById(R.id.status);
             messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
-            messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
-            messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
+            messengerTextView = (TextView) itemView.findViewById(R.id.userName);
+            messengerImageView = (CircleImageView) itemView.findViewById(R.id.userProfilePic);
         }
     }
 
@@ -248,7 +237,7 @@ public class MainActivity extends AppCompatActivity
                             break;
 //                    case 2:
 //                        Log.i(TAG, "onDataChange: 2 users are typing: "+usersTyping.get(0)+ " "+usersTyping.get(1) );
-//                        typingStatus.setText(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
+//                        typingStatus.setStatus(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
 //                            break;
                     default:
                         Log.i(TAG, "onDataChange: "+userTyping_arr.length+" users are typing");
@@ -267,6 +256,8 @@ public class MainActivity extends AppCompatActivity
                 new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
                         .setQuery(messagesRef, parser)
                         .build();
+
+
         mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
             @Override
             public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
@@ -434,30 +425,30 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    private Indexable getMessageIndexable(FriendlyMessage friendlyMessage) {
-        PersonBuilder sender = Indexables.personBuilder()
-                .setIsSelf(mUsername.equals(friendlyMessage.getName()))
-                .setName(friendlyMessage.getName())
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/sender"));
-
-        PersonBuilder recipient = Indexables.personBuilder()
-                .setName(mUsername)
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/recipient"));
-
-        Indexable messageToIndex = Indexables.messageBuilder()
-                .setName(friendlyMessage.getText())
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId()))
-                .setSender(sender)
-                .setRecipient(recipient)
-                .build();
-
-        return messageToIndex;
-    }
+//    private Indexable getMessageIndexable(FriendlyMessage friendlyMessage) {
+//        PersonBuilder sender = Indexables.personBuilder()
+//                .setIsSelf(mUsername.equals(friendlyMessage.getName()))
+//                .setName(friendlyMessage.getName())
+//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/sender"));
+//
+//        PersonBuilder recipient = Indexables.personBuilder()
+//                .setName(mUsername)
+//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/recipient"));
+//
+//        Indexable messageToIndex = Indexables.messageBuilder()
+//                .setName(friendlyMessage.getStatus())
+//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId()))
+//                .setSender(sender)
+//                .setRecipient(recipient)
+//                .build();
+//
+//        return messageToIndex;
+//    }
 
 //    @Override
-//    protected void onBindViewHolder(final MessageViewHolder viewHolder, FriendlyMessage friendlyMessage, int position) {
+//    protected void onBindViewHolder(final UserViewHolder viewHolder, FriendlyMessage friendlyMessage, int position) {
 //
-//        if (friendlyMessage.getText() != null) {
+//        if (friendlyMessage.getStatus() != null) {
 //            // write this message to the on-device index
 //            FirebaseAppIndex.getInstance()
 //                    .update(getMessageIndexable(friendlyMessage));
@@ -465,12 +456,12 @@ public class MainActivity extends AppCompatActivity
 //
 //    }
 
-    private Action getMessageViewAction(FriendlyMessage friendlyMessage) {
-        return new Action.Builder(Action.Builder.VIEW_ACTION)
-                .setObject(friendlyMessage.getName(), MESSAGE_URL.concat(friendlyMessage.getId()))
-                .setMetadata(new Action.Metadata.Builder().setUpload(false))
-                .build();
-    }
+//    private Action getMessageViewAction(FriendlyMessage friendlyMessage) {
+//        return new Action.Builder(Action.Builder.VIEW_ACTION)
+//                .setObject(friendlyMessage.getName(), MESSAGE_URL.concat(friendlyMessage.getId()))
+//                .setMetadata(new Action.Metadata.Builder().setUpload(false))
+//                .build();
+//    }
 
     private void userIsTyping(boolean isUserTyping) {
 
@@ -563,9 +554,10 @@ public class MainActivity extends AppCompatActivity
             finish();
             return;
         } else {
-            String deviceToken = FirebaseInstanceId.getInstance().getToken();
+
             String uidOfUser = mFirebaseUser.getUid();
-            UpdateUserToken(uidOfUser,deviceToken);
+            UpdateUserDetails(uidOfUser);
+
             mUsername = mFirebaseUser.getDisplayName();
             if (mFirebaseUser.getPhotoUrl() != null) {
                 mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
@@ -576,44 +568,29 @@ public class MainActivity extends AppCompatActivity
     /**
      *
      * @param uidOfUser (key)add the uid of user to firebase database
-     * @param UserToken  (value) puts userToken as value to uid.
      */
-    public void UpdateUserToken(String uidOfUser,String UserToken) {
+    public void UpdateUserDetails(final String uidOfUser) {
 
         Map<String,Object> tokenIdForDB = new HashMap<>();
-        tokenIdForDB.put("tokenId",UserToken);
-        usersRef.child(uidOfUser).updateChildren(tokenIdForDB);
-//        FirebaseDatabase.getInstance().getReference().child("dummyKeyVal").setValue("tempKeeey");
-//        if(usersRef==null)
-//        {
-//            usersRef.child("abcdddddd").child("jkjlkjlk").setValue("jsudesh");
-//        }
-//        usersRef.child(uidOfUser).child("token").setValue(tokenIdForDB);
-//       if(usersRef!=null)
-//       {
-//           usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//               @Override
-//               public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                   for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
-//                       if(! snapshot.hasChild(mFirebaseUser.getUid()))
-//                       {
-//                           usersRef.child(mFirebaseUser.getUid()).setValue(mFirebaseUser.getEmail());
-//                       }
-//                   }
-//               }
-//
-//               @Override
-//               public void onCancelled(DatabaseError databaseError) {
-//
-//               }
-//           });
-//       }
-//       else
-//       {
-//           mFirebaseDatabaseReference.child("keyss").setValue("awesome");
-//       }
 
+        String deviceToken = FirebaseInstanceId.getInstance().getToken();
+        usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.hasChild(uidOfUser)) {
+
+                    Log.i(TAG, "onDataChange: "+mFirebaseUser.getDisplayName()+" exists");
+//                    if(dataSnapshot.child(uidOfUser).hasChild()))
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        tokenIdForDB.put("tokenId",deviceToken);
+        usersRef.child(uidOfUser).updateChildren(tokenIdForDB);
     }
 
     @Override

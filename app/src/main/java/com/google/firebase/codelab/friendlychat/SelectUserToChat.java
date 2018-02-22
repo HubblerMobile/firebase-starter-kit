@@ -1,140 +1,182 @@
 package com.google.firebase.codelab.friendlychat;
 
-import android.net.Uri;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.firebase.ui.database.SnapshotParser;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class SelectUserToChat extends AppCompatActivity {
+public class SelectUserToChat extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
-    private FirebaseRecyclerAdapter<UserObject, MessageViewHolder> mFirebaseAdapter;
-    private RecyclerView usersRecylerView;
-    private DatabaseReference usersListReference;
     private DatabaseReference mFirebaseDatabaseReference;
+    private DatabaseReference usersRef;
 
-    public static final String USERS_LIST = "usersList";
+    private FirebaseRecyclerAdapter<UserObject, UserViewHolder> mFirebaseAdapter;
 
-    // VIEWHOLDER FOR FIREBASE USER LIST
-    public static class MessageViewHolder extends RecyclerView.ViewHolder {
-        TextView user_displayName;
-        ImageView messageImageView;
-        CircleImageView profilePicture;
 
-        public MessageViewHolder(View v) {
+    public static class UserViewHolder extends RecyclerView.ViewHolder {
+        TextView StatusTextView;
+        TextView userDisplayNameTextView;
+        CircleImageView userProfileImageView;
+
+
+        public UserViewHolder(View v) {
             super(v);
-            user_displayName = (TextView) v.findViewById(R.id.user_displayName);
-            messageImageView = (ImageView) v.findViewById(R.id.messageImageView);
-            profilePicture = (CircleImageView) v.findViewById(R.id.profilePicture);
+            StatusTextView = itemView.findViewById(R.id.status);
+            userDisplayNameTextView =  itemView.findViewById(R.id.userName);
+            userProfileImageView =  itemView.findViewById(R.id.userProfilePic);
         }
     }
 
+    private static final String TAG = "MainActivity";
+    public static final String MESSAGES_CHILD = "usersList";
+
+    private SharedPreferences mSharedPreferences;
+
+    private RecyclerView mMessageRecyclerView;
+    private LinearLayoutManager mLinearLayoutManager;
+    private ProgressBar mProgressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_select_user_to_chat);
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        usersListReference = mFirebaseDatabaseReference.child(USERS_LIST);            //Firebase message branch
-        usersListReference.keepSynced(true);
+        usersRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);            //Firebase message branch
+//        usersRef.keepSynced(true);
 
-        usersRecylerView = findViewById(R.id.messageRecyclerView);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_select_user_to_chat);
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+
+        mProgressBar = findViewById(R.id.progressBar);
+        mMessageRecyclerView = findViewById(R.id.messageRecyclerView);
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
+
         SnapshotParser<UserObject> parser = new SnapshotParser<UserObject>() {
             @Override
             public UserObject parseSnapshot(DataSnapshot dataSnapshot) {
-                UserObject friendlyMessage = dataSnapshot.getValue(UserObject.class);
-                if (friendlyMessage != null) {
-                    friendlyMessage.setId(dataSnapshot.getKey());
+                UserObject userObject = dataSnapshot.getValue(UserObject.class);
+                if (userObject != null) {
+                    userObject.setId(dataSnapshot.getKey());
                 }
-                return friendlyMessage;
+                return userObject;
             }
         };
 
         FirebaseRecyclerOptions<UserObject> options =
                 new FirebaseRecyclerOptions.Builder<UserObject>()
-                        .setQuery(usersListReference, parser)
+                        .setQuery(usersRef, parser)
                         .build();
 
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<UserObject, MessageViewHolder>(options) {
+
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<UserObject, UserViewHolder>(options) {
             @Override
-            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+            public UserViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new MessageViewHolder(inflater.inflate(R.layout.user_list_item, viewGroup, false));
+                return new UserViewHolder(inflater.inflate(R.layout.user_list_item, viewGroup, false));
             }
 
 
             @Override
-            protected void onBindViewHolder(final MessageViewHolder viewHolder,
+            protected void onBindViewHolder(final UserViewHolder viewHolder,
                                             int position,
                                             UserObject userObject) {
-                if (userObject.getDisplayName() != null) {
-                    viewHolder.user_displayName.setText(userObject.getDisplayName());
-                    viewHolder.user_displayName.setVisibility(TextView.VISIBLE);
-                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
-                } else {
-                    String imageUrl = userObject.getImageUrl();
-                    if (imageUrl.startsWith("gs://")) {
-                        StorageReference storageReference = FirebaseStorage.getInstance()
-                                .getReferenceFromUrl(imageUrl);
-                        storageReference.getDownloadUrl().addOnCompleteListener(
-                                new OnCompleteListener<Uri>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Uri> task) {
-                                        if (task.isSuccessful()) {
-                                            String downloadUrl = task.getResult().toString();
-                                            Glide.with(viewHolder.messageImageView.getContext())
-                                                    .load(downloadUrl)
-                                                    .into(viewHolder.messageImageView);
-                                        } else {
-                                            Log.w("selectUserMsg", "Getting download url was not successful.",
-                                                    task.getException());
-                                        }
-                                    }
-                                });
-                    } else {
-                        Glide.with(viewHolder.messageImageView.getContext())
-                                .load(userObject.getImageUrl())
-                                .into(viewHolder.messageImageView);
-                    }
-                    viewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
-                    viewHolder.user_displayName.setVisibility(TextView.GONE);
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                if (userObject.getStatus() != null) {
+                    viewHolder.StatusTextView.setText(userObject.getStatus());
+                    viewHolder.StatusTextView.setVisibility(TextView.VISIBLE);
                 }
 
+                viewHolder.userDisplayNameTextView.setText(userObject.getName());
 
-                viewHolder.user_displayName.setText(userObject.getDisplayName());
                 if (userObject.getPhotoUrl() == null) {
-                    viewHolder.profilePicture.setImageDrawable(ContextCompat.getDrawable(SelectUserToChat.this,
+                    //Default Profile Icon
+                    viewHolder.userProfileImageView.setImageDrawable(ContextCompat.getDrawable(SelectUserToChat.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
                     Glide.with(SelectUserToChat.this)
                             .load(userObject.getPhotoUrl())
-                            .into(viewHolder.profilePicture);
+                            .into(viewHolder.userProfileImageView);
                 }
 
             }
         };
 
-        usersRecylerView.setAdapter(mFirebaseAdapter);
+        mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                super.onItemRangeInserted(positionStart, itemCount);
+                int friendlyMessageCount = mFirebaseAdapter.getItemCount();
+                int lastVisiblePosition =
+                        mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
+                // If the recycler view is initially being loaded or the
+                // user is at the bottom of the list, scroll to the bottom
+                // of the list to show the newly added message.
+                if (lastVisiblePosition == -1 ||
+                        (positionStart >= (friendlyMessageCount - 1) &&
+                                lastVisiblePosition == (positionStart - 1))) {
+                    mMessageRecyclerView.scrollToPosition(positionStart);
+                }
+            }
+        });
+
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Check if user is signed in.
+        // TODO: Add code to check if user is signed in.
+    }
+
+    @Override
+    public void onPause() {
+        mFirebaseAdapter.stopListening();
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        mFirebaseAdapter.startListening();
+        super.onResume();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
+        // be available.
+        Log.d(TAG, "onConnectionFailed:" + connectionResult);
+        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
     }
 }

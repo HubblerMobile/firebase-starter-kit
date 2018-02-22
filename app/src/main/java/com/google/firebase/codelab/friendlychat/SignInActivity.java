@@ -104,7 +104,7 @@ public class SignInActivity extends AppCompatActivity implements
 //                    mainActivity.AddUserToDatbase(registeredUser);
                     String deviceToken = FirebaseInstanceId.getInstance().getToken();
                     String uidOfUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    mainActivity.UpdateUserToken(uidOfUser,deviceToken);
+                    mainActivity.UpdateUserDetails(uidOfUser);
                     Intent mainIntent = new Intent(SignInActivity.this,MainActivity.class);
                     startActivity(mainIntent);
                     finish();

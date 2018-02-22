@@ -29,7 +29,6 @@
                     android:scheme="http" />
             </intent-filter>
         </activity>
-        <!--<activity android:name=".MainActivity"/>-->
         <activity android:name=".SignInActivity" />
 
         <service android:name=".MyFirebaseInstanceIdService">
@@ -44,21 +43,6 @@
             </intent-filter>
         </service>
         [END firebase_service]
-        <!-- [START firebase_iid_service] -->
-        <!-- <service -->
-        <!-- android:name=".MyFirebaseInstanceIDService"> -->
-        <!-- <intent-filter> -->
-        <!-- <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/> -->
-        <!-- </intent-filter> -->
-        <!-- </service> -->
-        <!-- [END firebase_iid_service] -->
-        <!-- Firebase Service -->
-        <!-- <service android:name=".MyFCMClass"> -->
-        <!-- <intent-filter> -->
-        <!-- <action android:name="com.google.firebase.MESSAGING_EVENT" /> -->
-        <!-- </intent-filter> -->
-        <!-- </service> -->
-
         <activity android:name=".MainActivity" />
         <activity android:name=".SelectUserToChat"></activity>
     </application>
