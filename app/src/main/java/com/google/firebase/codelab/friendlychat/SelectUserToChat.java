@@ -23,8 +23,10 @@ import com.firebase.ui.database.SnapshotParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -40,13 +42,20 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
         TextView StatusTextView;
         TextView userDisplayNameTextView;
         CircleImageView userProfileImageView;
+        View viewItem;
 
-
-        public UserViewHolder(View v) {
-            super(v);
+        public UserViewHolder(View itemView) {
+            super(itemView);
             StatusTextView = itemView.findViewById(R.id.status);
             userDisplayNameTextView =  itemView.findViewById(R.id.userName);
             userProfileImageView =  itemView.findViewById(R.id.userProfilePic);
+
+            this.viewItem = itemView;
+        }
+
+        public void bindToUserViewHolder(UserObject userObject, View.OnClickListener clickListener) {
+
+            // viewItem.setOnClickListener(clickListener);
         }
     }
 
@@ -92,37 +101,66 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                         .setQuery(usersRef, parser)
                         .build();
 
-
+//FIREBASE RECYLER ADAPTER
         mFirebaseAdapter = new FirebaseRecyclerAdapter<UserObject, UserViewHolder>(options) {
             @Override
-            public UserViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-                LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new UserViewHolder(inflater.inflate(R.layout.user_list_item, viewGroup, false));
+            public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+                LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+                return new UserViewHolder(inflater.inflate(R.layout.user_list_item, parent, false));
             }
 
 
             @Override
             protected void onBindViewHolder(final UserViewHolder viewHolder,
-                                            int position,
+                                            final int position,
                                             UserObject userObject) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                if (userObject.getStatus() != null) {
+
+                if (userObject.getStatus() != null) {                                   //If status available, set and make it visible
                     viewHolder.StatusTextView.setText(userObject.getStatus());
                     viewHolder.StatusTextView.setVisibility(TextView.VISIBLE);
                 }
 
                 viewHolder.userDisplayNameTextView.setText(userObject.getName());
 
-                if (userObject.getPhotoUrl() == null) {
+                viewHolder.viewItem.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        DatabaseReference firebaseAdapterRef = mFirebaseAdapter.getRef(position);
+
+                        firebaseAdapterRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                String name = dataSnapshot.child("name").getValue().toString();
+                                Toast.makeText(SelectUserToChat.this, "Name is "+name, Toast.LENGTH_SHORT).show();
+
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+                                Toast.makeText(SelectUserToChat.this, "Event was cancelledd", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
+
+                viewHolder.bindToUserViewHolder(userObject, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+                if (userObject.getPhotoUrl() == null) {                                 //Default profile pic
                     //Default Profile Icon
                     viewHolder.userProfileImageView.setImageDrawable(ContextCompat.getDrawable(SelectUserToChat.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
-                    Glide.with(SelectUserToChat.this)
+                    Glide.with(SelectUserToChat.this)                           // if user provides profile picture
                             .load(userObject.getPhotoUrl())
                             .into(viewHolder.userProfileImageView);
                 }
-
             }
         };
 
