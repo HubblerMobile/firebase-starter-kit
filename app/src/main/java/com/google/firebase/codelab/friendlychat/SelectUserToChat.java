@@ -55,7 +55,6 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
             this.viewItem = itemView;
         }
-
     }
 
     private static final String TAG = "MainActivity";
@@ -70,11 +69,12 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        super.onCreate(savedInstanceState);
+
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         usersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
 //        usersRef.keepSynced(true);
 
-        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_user_to_chat);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -108,13 +108,23 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
          parse.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-
+                UserObject me = null;
+                DatabaseReference addBackUserAt = null;
                 for (DataSnapshot requiredSnap: dataSnapshot.getChildren())
                 {
-                    if(requiredSnap.getKey()==FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    if(requiredSnap.getKey().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
                     {
+                         me = requiredSnap.getValue(UserObject.class);
+                        addBackUserAt = requiredSnap.getRef();
                         requiredSnap.getRef().removeValue();
+
+                        Log.i(TAG, "onDataChange: "+me);
                     }
+                }
+
+                if(me!=null && addBackUserAt!=null) {
+
+                    addBackUserAt.setValue(me);
                 }
             }
 
@@ -124,6 +134,8 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
             }
         });
+
+
         Log.i(TAG, "onCreate: Parsed Query "+parse);
 //        Log.i(TAG, "onCreate: "+parse);
 
@@ -147,14 +159,6 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                                             final int position,
                                             UserObject userObject) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-
-//                if(userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
-//                {
-//
-//                }
-//                else {
-//                    Log.i(TAG, "onBindViewHolder: not my account "+userObject.getId()+"  "+FirebaseAuth.getInstance().getCurrentUser().getUid());
-//                }
 
                 if (userObject.getStatus() != null) {                                   //If status available, set and make it visible
                     viewHolder.StatusTextView.setText(userObject.getStatus());

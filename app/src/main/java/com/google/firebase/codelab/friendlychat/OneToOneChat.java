@@ -41,11 +41,13 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +69,7 @@ public class OneToOneChat extends AppCompatActivity
     private DatabaseReference conversationsRef;
     private DatabaseReference typingStatusRef;
     private DatabaseReference currentChat;
+    private DatabaseReference recentChats;
 //    private DatabaseReference notificationRef;
 //    private DatabaseReference usersRef;
 
@@ -80,6 +83,7 @@ public class OneToOneChat extends AppCompatActivity
     private static final String TAG = "MainActivity";
     public static final String CONVERSATIONS = "conversations";
     public static final String TYPING_STATUS = "users_typing";
+    public static final String RECENT_CHATS = "recent_chats";
     public static final String USERS_AVAILABLE = "usersList";
     private static final int REQUEST_INVITE = 1;
     private static final int REQUEST_IMAGE = 2;
@@ -126,10 +130,11 @@ public class OneToOneChat extends AppCompatActivity
 //        conversationsRef.keepSynced(true);
 //        notificationRef = mFirebaseDatabaseReference.child("Notification");
         typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
+        recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
 //        usersRef = mFirebaseDatabaseReference.child(USERS_AVAILABLE);
         Intent intent = getIntent();
-        String sender = intent.getStringExtra("sender");
-        String reciever = intent.getStringExtra("receiver");
+        final String sender = intent.getStringExtra("sender");
+        final String reciever = intent.getStringExtra("receiver");
         Toast.makeText(this, sender+" :: "+reciever, Toast.LENGTH_SHORT).show();
 
         currentChat = conversationsRef.child(sender+" chat with "+reciever);
@@ -137,13 +142,6 @@ public class OneToOneChat extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        // Set default username is anonymous.
-//        mUsername = FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
-
-//        mGoogleApiClient = new GoogleApiClient.Builder(this)
-//                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
-//                .addApi(Auth.GOOGLE_SIGN_IN_API)
-//                .build();
         getCurrentUser();
 
         // Initialize ProgressBar and RecyclerView.
@@ -181,7 +179,7 @@ public class OneToOneChat extends AppCompatActivity
                     typingStatus.setText("");
                     return;
                 }
-//                userWhoAreTyping.remove("hubbler");
+
                 if(userWhoAreTyping.containsKey(mUsername))     // remove our name from list for the right no. of users typing.
                 {
                     userWhoAreTyping.remove(mUsername);
@@ -383,6 +381,34 @@ public class OneToOneChat extends AppCompatActivity
                 currentChat
                         .push().setValue(friendlyMessage);
 
+                      Map<String,Object> updatedChatTime = new HashMap<>();
+                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+                      updatedChatTime.put("TimeStamp", ServerValue.TIMESTAMP);
+                      updatedChatTime.put("Sender Name",mFirebaseAuth.getCurrentUser().getDisplayName());
+
+
+
+                recentChats.child(reciever).child(sender).updateChildren(updatedChatTime);
+
+                recentChats.child(reciever).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+
+                        Toast.makeText(OneToOneChat.this, "User ID "+dataSnapshot.getKey(), Toast.LENGTH_SHORT).show();
+                        for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
+
+                            Long times =  Long.valueOf(snapshot.child("TimeStamp").getValue().toString());
+                            Log.i(TAG, "onDataChange: Long time "+ getDataTimeStamp(times));
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
                 mMessageEditText.setText("");
             }
         });
@@ -398,7 +424,6 @@ public class OneToOneChat extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         });
-
     }
 
 
@@ -471,6 +496,15 @@ public class OneToOneChat extends AppCompatActivity
         }
     }
 
+    public String getDataTimeStamp(long timestamp){
+        java.util.Date time=new java.util.Date(timestamp);
+//        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
+        SimpleDateFormat pre = new SimpleDateFormat("HH:mm:ss");
+
+        //Hear Define your returning date formate
+        return pre.format(time);
+    }
+
     public void CheckTypingStatus() {
 
         final Handler handler = new Handler();
@@ -492,7 +526,6 @@ public class OneToOneChat extends AppCompatActivity
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
 
-                            Log.i(TAG, "onDataChange: Datasnapshot get it "+dataSnapshot);
                             for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
                                 if(snapshot.getKey() == mUsername)
                                 {

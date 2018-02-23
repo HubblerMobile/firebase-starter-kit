@@ -41,15 +41,6 @@ public class RecentConversation extends AppCompatActivity {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
             return;
-//        } else {
-//
-//            String uidOfUser = mFirebaseUser.getUid();
-//            UpdateUserDetails(uidOfUser);
-//
-//            mUsername = mFirebaseUser.getDisplayName();
-//            if (mFirebaseUser.getPhotoUrl() != null) {
-//                mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
-//            }
         }
     }
 }
