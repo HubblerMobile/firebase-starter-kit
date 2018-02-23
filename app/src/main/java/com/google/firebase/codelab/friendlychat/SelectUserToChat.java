@@ -28,6 +28,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -58,7 +59,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
     }
 
     private static final String TAG = "MainActivity";
-    public static final String MESSAGES_CHILD = "usersList";
+    public static final String LIST_OF_USERS = "usersList";
 
     private SharedPreferences mSharedPreferences;
 
@@ -70,7 +71,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
     protected void onCreate(Bundle savedInstanceState) {
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        usersRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);            //Firebase message branch
+        usersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
 //        usersRef.keepSynced(true);
 
         super.onCreate(savedInstanceState);
@@ -86,17 +87,49 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
         SnapshotParser<UserObject> parser = new SnapshotParser<UserObject>() {
             @Override
             public UserObject parseSnapshot(DataSnapshot dataSnapshot) {
+
+//                Log.i(TAG, "parseSnapshot: "+dataSnapshot.getKey());
                 UserObject userObject = dataSnapshot.getValue(UserObject.class);
                 if (userObject != null) {
-                    userObject.setId(dataSnapshot.getKey());
+
+                    if(!userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
+                    {
+                        userObject.setId(dataSnapshot.getKey());
+                        return userObject;
+                    }
+
                 }
-                return userObject;
+                return null;
             }
         };
 
+// Remove your name from the chat user list so that only other users are visible.
+        Query parse = usersRef.orderByKey();
+         parse.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                for (DataSnapshot requiredSnap: dataSnapshot.getChildren())
+                {
+                    if(requiredSnap.getKey()==FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    {
+                        requiredSnap.getRef().removeValue();
+                    }
+                }
+            }
+
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        Log.i(TAG, "onCreate: Parsed Query "+parse);
+//        Log.i(TAG, "onCreate: "+parse);
+
         FirebaseRecyclerOptions<UserObject> options =
                 new FirebaseRecyclerOptions.Builder<UserObject>()
-                        .setQuery(usersRef, parser)
+                        .setQuery(parse, UserObject.class)
                         .build();
 
     //FIREBASE RECYLER ADAPTER
@@ -114,6 +147,14 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                                             final int position,
                                             UserObject userObject) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+
+//                if(userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
+//                {
+//
+//                }
+//                else {
+//                    Log.i(TAG, "onBindViewHolder: not my account "+userObject.getId()+"  "+FirebaseAuth.getInstance().getCurrentUser().getUid());
+//                }
 
                 if (userObject.getStatus() != null) {                                   //If status available, set and make it visible
                     viewHolder.StatusTextView.setText(userObject.getStatus());
