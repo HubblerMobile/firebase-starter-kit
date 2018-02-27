@@ -3,6 +3,7 @@ package com.google.firebase.codelab.friendlychat;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -159,8 +160,39 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
         Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
-
         currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+
+        conversationsRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+               for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
+
+                   String conversationKey = snapshot.getKey();
+                   Log.i(TAG, "onDataChange: Chat UID "+conversationKey);
+                   if(conversationKey.equals(senderUid +" chat with"+recieverUid))
+                   {
+                       currentChat = conversationsRef.child(senderUid+" chat with "+recieverUid);
+                   }
+                   else if(conversationKey.equals((recieverUid+" chat with "+senderUid)))
+                   {
+                       currentChat = conversationsRef.child(recieverUid+" chat with "+senderUid);
+                   }
+//                   else
+//                   {
+//                       Log.i(TAG, "onDataChange: New Conversation Started");
+//                       currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+//                   }
+               }
+            }
+
+
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -288,32 +320,7 @@ public class OneToOneChat extends AppCompatActivity
                     viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
                     viewHolder.messageImageView.setVisibility(ImageView.GONE);
                 } else {
-//                    String imageUrl = friendlyMessage.getImageUrl();
-//                    if (imageUrl.startsWith("gs://")) {
-//                        StorageReference storageReference = FirebaseStorage.getInstance()
-//                                .getReferenceFromUrl(imageUrl);
-//                        storageReference.getDownloadUrl().addOnCompleteListener(
-//                                new OnCompleteListener<Uri>() {
-//                                    @Override
-//                                    public void onComplete(@NonNull Task<Uri> task) {
-//                                        if (task.isSuccessful()) {
-//                                            String downloadUrl = task.getResult().toString();
-//                                            Glide.with(viewHolder.messageImageView.getContext())
-//                                                    .load(downloadUrl)
-//                                                    .into(viewHolder.messageImageView);
-//                                        } else {
-//                                            Log.w(TAG, "Getting download url was not successful.",
-//                                                    task.getException());
-//                                        }
-//                                    }
-//                                });
-//                    } else {
-//                        Glide.with(viewHolder.messageImageView.getContext())
-//                                .load(friendlyMessage.getImageUrl())
-//                                .into(viewHolder.messageImageView);
-//                    }
-//                    viewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
-//                    viewHolder.messageTextView.setVisibility(TextView.GONE);
+//                  Handle Image view.
                 }
 
 
@@ -411,13 +418,13 @@ public class OneToOneChat extends AppCompatActivity
                       lastChatMessage.put("timeStamp", timeStamp);
                       lastChatMessage.put("name", recieverUsername);
                       lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
-                      lastChatMessage.put("photoUrl", recieverPhotoUrl);
+                      lastChatMessage.put("photoUrl", mPhotoUrl);
 
 //                      mFirebaseDatabaseReference.child("hfjkks").setValue(lastChatMessage);
 
 
                 recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
-//                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
+                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
 
 //                if( !mUid.equals(senderUid)) {
 //
@@ -438,8 +445,16 @@ public class OneToOneChat extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         });
+
+
+
+
     }
 
+    private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
+
+
+    }
     private void userIsTyping(boolean isUserTyping) {
 
         if(isUserTyping) {
@@ -630,4 +645,8 @@ public class OneToOneChat extends AppCompatActivity
         Log.d(TAG, "onConnectionFailed:" + connectionResult);
         Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
     }
+
+
+
+
 }

@@ -36,11 +36,12 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class SelectUserToChat extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
     private DatabaseReference mFirebaseDatabaseReference;
-    private DatabaseReference usersRef;
+    private DatabaseReference listOfUsersRef;
 
+    private FirebaseAuth mFirebaseAuth;
     private FirebaseRecyclerAdapter<UserObject, UserViewHolder> mFirebaseAdapter;
 
-
+    private String mUid;
     public static class UserViewHolder extends RecyclerView.ViewHolder {
         TextView StatusTextView;
         TextView userDisplayNameTextView;
@@ -72,8 +73,11 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
         super.onCreate(savedInstanceState);
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        usersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
-//        usersRef.keepSynced(true);
+        listOfUsersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
+
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mUid = mFirebaseAuth.getCurrentUser().getUid();
+//        listOfUsersRef.keepSynced(true);
 
         setContentView(R.layout.activity_select_user_to_chat);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -90,21 +94,24 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
 //                Log.i(TAG, "parseSnapshot: "+dataSnapshot.getKey());
                 UserObject userObject = dataSnapshot.getValue(UserObject.class);
-                if (userObject != null) {
-
-                    if(!userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
-                    {
-                        userObject.setId(dataSnapshot.getKey());
-                        return userObject;
-                    }
-
-                }
-                return null;
+//                if (userObject != null) {
+//
+//                    // show all users except your own.
+////                    if(!userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
+//                    if(!userObject.getId().equals("iUlC1L0fyYa5JsoUtYz8bGvMtFk2"))
+//                    {
+//                        userObject.setId(dataSnapshot.getKey());
+//                        return userObject;
+//                    }
+//
+//                }
+                return userObject;
+//                return null;
             }
         };
 
 // Remove your name from the chat user list so that only other users are visible.
-        Query query = usersRef.orderByKey();
+        Query query = listOfUsersRef.orderByKey();
          query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -141,7 +148,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
         FirebaseRecyclerOptions<UserObject> options =
                 new FirebaseRecyclerOptions.Builder<UserObject>()
-                        .setQuery(query, UserObject.class)
+                        .setQuery(query, parser)
                         .build();
 
     //FIREBASE RECYLER ADAPTER
@@ -149,6 +156,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
             @Override
             public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
+                Log.i(TAG, "onCreateViewHolder: "+viewType);
                 LayoutInflater inflater = LayoutInflater.from(parent.getContext());
                 return new UserViewHolder(inflater.inflate(R.layout.user_list_item, parent, false));
             }
@@ -160,6 +168,16 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                                             UserObject userObject) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
+
+          //Todo: Temporary hack. not try to find how to remove it from the the list itself.
+                if(userObject.getId().equals(mUid))
+                {
+                    viewHolder.viewItem.setVisibility(View.GONE);
+                }
+                else {
+                    viewHolder.viewItem.setVisibility(View.VISIBLE);
+                }
+            // QuicHack ends here
                 if (userObject.getStatus() != null) {                                   //If status available, set and make it visible
                     viewHolder.StatusTextView.setText(userObject.getStatus());
                     viewHolder.StatusTextView.setVisibility(TextView.VISIBLE);
