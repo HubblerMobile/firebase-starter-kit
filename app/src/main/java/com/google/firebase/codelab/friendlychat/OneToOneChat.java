@@ -159,8 +159,7 @@ public class OneToOneChat extends AppCompatActivity
 
             }
         });
-        Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
-        currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+//        currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
 
         conversationsRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -170,13 +169,18 @@ public class OneToOneChat extends AppCompatActivity
 
                    String conversationKey = snapshot.getKey();
                    Log.i(TAG, "onDataChange: Chat UID "+conversationKey);
+
                    if(conversationKey.equals(senderUid +" chat with"+recieverUid))
                    {
                        currentChat = conversationsRef.child(senderUid+" chat with "+recieverUid);
+                       SetOptionsFirebaseAdapter(currentChat);
+                       return;
                    }
                    else if(conversationKey.equals((recieverUid+" chat with "+senderUid)))
                    {
                        currentChat = conversationsRef.child(recieverUid+" chat with "+senderUid);
+                       SetOptionsFirebaseAdapter(currentChat);
+                       return;
                    }
 //                   else
 //                   {
@@ -207,16 +211,7 @@ public class OneToOneChat extends AppCompatActivity
         mLinearLayoutManager.setStackFromEnd(true);
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
-            @Override
-            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                if (friendlyMessage != null) {
-                    friendlyMessage.setId(dataSnapshot.getKey());
-                }
-                return friendlyMessage;
-            }
-        };
+
 
         typingStatusRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -296,65 +291,7 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
 
-        FirebaseRecyclerOptions<FriendlyMessage> options =
-                new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-                        .setQuery(currentChat, parser)
-                        .build();
 
-
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
-            @Override
-            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-                LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
-            }
-
-
-            @Override
-            protected void onBindViewHolder(final MessageViewHolder viewHolder,
-                                            int position,
-                                            FriendlyMessage friendlyMessage) {
-                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                if (friendlyMessage.getText() != null) {
-                    viewHolder.messageTextView.setText(friendlyMessage.getText());
-                    viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
-                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
-                } else {
-//                  Handle Image view.
-                }
-
-
-                viewHolder.messengerTextView.setText(friendlyMessage.getName());
-                if (friendlyMessage.getPhotoUrl() == null) {
-                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
-                            R.drawable.ic_account_circle_black_36dp));
-                } else {
-                    Glide.with(OneToOneChat.this)
-                            .load(friendlyMessage.getPhotoUrl())
-                            .into(viewHolder.messengerImageView);
-                }
-            }
-        };
-
-        mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
-            @Override
-            public void onItemRangeInserted(int positionStart, int itemCount) {
-                super.onItemRangeInserted(positionStart, itemCount);
-                int friendlyMessageCount = mFirebaseAdapter.getItemCount();
-                int lastVisiblePosition =
-                        mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
-                // If the recycler view is initially being loaded or the
-                // user is at the bottom of the list, scroll to the bottom
-                // of the list to show the newly added message.
-                if (lastVisiblePosition == -1 ||
-                        (positionStart >= (friendlyMessageCount - 1) &&
-                                lastVisiblePosition == (positionStart - 1))) {
-                    mMessageRecyclerView.scrollToPosition(positionStart);
-                }
-            }
-        });
-
-        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
         mMessageEditText =  findViewById(R.id.messageEditText);
 
         mMessageEditText.addTextChangedListener(new TextWatcher() {
@@ -453,7 +390,81 @@ public class OneToOneChat extends AppCompatActivity
 
     private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
 
+        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
+            @Override
+            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
+                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                if (friendlyMessage != null) {
+                    friendlyMessage.setId(dataSnapshot.getKey());
+                }
+                return friendlyMessage;
+            }
+        };
 
+        FirebaseRecyclerOptions<FriendlyMessage> options =
+                new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
+                        .setQuery(queryBranch, parser)
+                        .build();
+
+        Toast.makeText(this, queryBranch.getKey(), Toast.LENGTH_SHORT).show();
+        callFirebaseAdpater(options);
+    }
+
+    private void callFirebaseAdpater(FirebaseRecyclerOptions<FriendlyMessage> options)
+    {
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
+            @Override
+            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+                LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
+                return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
+            }
+
+
+            @Override
+            protected void onBindViewHolder(final MessageViewHolder viewHolder,
+                                            int position,
+                                            FriendlyMessage friendlyMessage) {
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                if (friendlyMessage.getText() != null) {
+                    viewHolder.messageTextView.setText(friendlyMessage.getText());
+                    viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
+                } else {
+//                  Handle Image view.
+                }
+
+
+                viewHolder.messengerTextView.setText(friendlyMessage.getName());
+                if (friendlyMessage.getPhotoUrl() == null) {
+                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+                            R.drawable.ic_account_circle_black_36dp));
+                } else {
+                    Glide.with(OneToOneChat.this)
+                            .load(friendlyMessage.getPhotoUrl())
+                            .into(viewHolder.messengerImageView);
+                }
+            }
+        };
+
+        mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                super.onItemRangeInserted(positionStart, itemCount);
+                int friendlyMessageCount = mFirebaseAdapter.getItemCount();
+                int lastVisiblePosition =
+                        mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
+                // If the recycler view is initially being loaded or the
+                // user is at the bottom of the list, scroll to the bottom
+                // of the list to show the newly added message.
+                if (lastVisiblePosition == -1 ||
+                        (positionStart >= (friendlyMessageCount - 1) &&
+                                lastVisiblePosition == (positionStart - 1))) {
+                    mMessageRecyclerView.scrollToPosition(positionStart);
+                }
+            }
+        });
+
+        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
     }
     private void userIsTyping(boolean isUserTyping) {
 
@@ -559,12 +570,14 @@ public class OneToOneChat extends AppCompatActivity
 
     @Override
     public void onPause() {
+       if(mFirebaseAdapter!=null)
         mFirebaseAdapter.stopListening();
         super.onPause();
     }
 
     @Override
     public void onResume() {
+        if(mFirebaseAdapter!=null)
         mFirebaseAdapter.startListening();
         super.onResume();
     }
