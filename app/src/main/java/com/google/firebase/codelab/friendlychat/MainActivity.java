@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity
 
         public MessageViewHolder(View v) {
             super(v);
-            messageTextView = (TextView) itemView.findViewById(R.id.status);
+            messageTextView = (TextView) itemView.findViewById(R.id.text);
             messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
             messengerTextView = (TextView) itemView.findViewById(R.id.userName);
             messengerImageView = (CircleImageView) itemView.findViewById(R.id.userProfilePic);
@@ -236,7 +236,7 @@ public class MainActivity extends AppCompatActivity
                             break;
 //                    case 2:
 //                        Log.i(TAG, "onDataChange: 2 users are typing: "+usersTyping.get(0)+ " "+usersTyping.get(1) );
-//                        typingStatus.setStatus(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
+//                        typingStatus.setText(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
 //                            break;
                     default:
                         Log.i(TAG, "onDataChange: "+userTyping_arr.length+" users are typing");
@@ -435,7 +435,7 @@ public class MainActivity extends AppCompatActivity
 //                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/recipient"));
 //
 //        Indexable messageToIndex = Indexables.messageBuilder()
-//                .setName(friendlyMessage.getStatus())
+//                .setName(friendlyMessage.getText())
 //                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId()))
 //                .setSender(sender)
 //                .setRecipient(recipient)
@@ -445,9 +445,9 @@ public class MainActivity extends AppCompatActivity
 //    }
 
 //    @Override
-//    protected void onBindViewHolder(final UserViewHolder viewHolder, FriendlyMessage friendlyMessage, int position) {
+//    protected void onBindViewHolder(final RecentChatViewHolder viewHolder, FriendlyMessage friendlyMessage, int position) {
 //
-//        if (friendlyMessage.getStatus() != null) {
+//        if (friendlyMessage.getText() != null) {
 //            // write this message to the on-device index
 //            FirebaseAppIndex.getInstance()
 //                    .update(getMessageIndexable(friendlyMessage));

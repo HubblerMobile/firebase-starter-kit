@@ -49,7 +49,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
         public UserViewHolder(View itemView) {
             super(itemView);
-            StatusTextView = itemView.findViewById(R.id.status);
+            StatusTextView = itemView.findViewById(R.id.text);
             userDisplayNameTextView =  itemView.findViewById(R.id.userName);
             userProfileImageView =  itemView.findViewById(R.id.userProfilePic);
 
@@ -80,7 +80,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
 
         mProgressBar = findViewById(R.id.progressBar);
-        mMessageRecyclerView = findViewById(R.id.messageRecyclerView);
+        mMessageRecyclerView = findViewById(R.id.recentChatsRecyclerView);
         mLinearLayoutManager = new LinearLayoutManager(this);
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
@@ -104,8 +104,8 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
         };
 
 // Remove your name from the chat user list so that only other users are visible.
-        Query parse = usersRef.orderByKey();
-         parse.addListenerForSingleValueEvent(new ValueEventListener() {
+        Query query = usersRef.orderByKey();
+         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserObject me = null;
@@ -136,12 +136,12 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
         });
 
 
-        Log.i(TAG, "onCreate: Parsed Query "+parse);
+        Log.i(TAG, "onCreate: Parsed Query "+query);
 //        Log.i(TAG, "onCreate: "+parse);
 
         FirebaseRecyclerOptions<UserObject> options =
                 new FirebaseRecyclerOptions.Builder<UserObject>()
-                        .setQuery(parse, UserObject.class)
+                        .setQuery(query, UserObject.class)
                         .build();
 
     //FIREBASE RECYLER ADAPTER

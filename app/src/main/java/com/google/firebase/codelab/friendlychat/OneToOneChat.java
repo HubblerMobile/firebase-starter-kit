@@ -71,10 +71,10 @@ public class OneToOneChat extends AppCompatActivity
     private DatabaseReference currentChat;
     private DatabaseReference recentChats;
 //    private DatabaseReference notificationRef;
-//    private DatabaseReference usersRef;
+    private DatabaseReference usersRef;
 
 
-    private FirebaseRecyclerAdapter<FriendlyMessage, MainActivity.MessageViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder> mFirebaseAdapter;
     private int timeDelayForCheck = 1;
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
@@ -84,15 +84,24 @@ public class OneToOneChat extends AppCompatActivity
     public static final String CONVERSATIONS = "conversations";
     public static final String TYPING_STATUS = "users_typing";
     public static final String RECENT_CHATS = "recent_chats";
-    public static final String USERS_AVAILABLE = "usersList";
+    public static final String USERS_LIST = "usersList";
     private static final int REQUEST_INVITE = 1;
     private static final int REQUEST_IMAGE = 2;
     private static final String LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 100;
     public static final String ANONYMOUS = "anonymous";
     private static final String MESSAGE_SENT_EVENT = "message_sent";
+
+    private String mUid;    // userId of the user using device.
     private String mUsername;
     private String mPhotoUrl;
+
+    private String senderUid;   //passed from prv activity through intent.
+
+    private String recieverUid;
+    private String recieverUsername;
+    private String recieverPhotoUrl;
+
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
     private static final String MESSAGE_URL = "http://friendlychat.firebase.google.com/message/";
@@ -115,10 +124,10 @@ public class OneToOneChat extends AppCompatActivity
 
         public MessageViewHolder(View v) {
             super(v);
-            messageTextView = (TextView) itemView.findViewById(R.id.status);
-            messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
-            messengerTextView = (TextView) itemView.findViewById(R.id.userName);
-            messengerImageView = (CircleImageView) itemView.findViewById(R.id.userProfilePic);
+            messageTextView =  itemView.findViewById(R.id.text);
+            messageImageView =  itemView.findViewById(R.id.messageImageView);
+            messengerTextView =  itemView.findViewById(R.id.userName);
+            messengerImageView = itemView.findViewById(R.id.userProfilePic);
         }
     }
 
@@ -131,13 +140,27 @@ public class OneToOneChat extends AppCompatActivity
 //        notificationRef = mFirebaseDatabaseReference.child("Notification");
         typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
         recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
-//        usersRef = mFirebaseDatabaseReference.child(USERS_AVAILABLE);
+        usersRef = mFirebaseDatabaseReference.child(USERS_LIST);
         Intent intent = getIntent();
-        final String sender = intent.getStringExtra("sender");
-        final String reciever = intent.getStringExtra("receiver");
-        Toast.makeText(this, sender+" :: "+reciever, Toast.LENGTH_SHORT).show();
+        senderUid = intent.getStringExtra("sender");
+        recieverUid = intent.getStringExtra("receiver");
 
-        currentChat = conversationsRef.child(sender+" chat with "+reciever);
+        usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                recieverUsername = dataSnapshot.child("name").getValue().toString();
+                recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
+
+        currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -226,7 +249,7 @@ public class OneToOneChat extends AppCompatActivity
                         break;
 //                    case 2:
 //                        Log.i(TAG, "onDataChange: 2 users are typing: "+usersTyping.get(0)+ " "+usersTyping.get(1) );
-//                        typingStatus.setStatus(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
+//                        typingStatus.setText(usersTyping.get(0)+", "+usersTyping.get(1)+" are typing");
 //                            break;
                     default:
                         Log.i(TAG, "onDataChange: "+userTyping_arr.length+" users are typing");
@@ -247,16 +270,16 @@ public class OneToOneChat extends AppCompatActivity
                         .build();
 
 
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MainActivity.MessageViewHolder>(options) {
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
             @Override
-            public MainActivity.MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new MainActivity.MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
+                return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
             }
 
 
             @Override
-            protected void onBindViewHolder(final MainActivity.MessageViewHolder viewHolder,
+            protected void onBindViewHolder(final MessageViewHolder viewHolder,
                                             int position,
                                             FriendlyMessage friendlyMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -381,35 +404,26 @@ public class OneToOneChat extends AppCompatActivity
                 currentChat
                         .push().setValue(friendlyMessage);
 
-                      Map<String,Object> updatedChatTime = new HashMap<>();
+                      Map<String,Object> lastChatMessage = new HashMap<>();
+
                 Map<String, String> timeStamp = ServerValue.TIMESTAMP;
-                      updatedChatTime.put("TimeStamp", ServerValue.TIMESTAMP);
-                      updatedChatTime.put("Sender Name",mFirebaseAuth.getCurrentUser().getDisplayName());
+                      lastChatMessage.put("uid", senderUid);
+                      lastChatMessage.put("timeStamp", timeStamp);
+                      lastChatMessage.put("name", recieverUsername);
+                      lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
+                      lastChatMessage.put("photoUrl", recieverPhotoUrl);
+
+//                      mFirebaseDatabaseReference.child("hfjkks").setValue(lastChatMessage);
 
 
+                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
+//                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
 
-                recentChats.child(reciever).child(sender).updateChildren(updatedChatTime);
-
-                recentChats.child(reciever).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-
-
-                        Toast.makeText(OneToOneChat.this, "User ID "+dataSnapshot.getKey(), Toast.LENGTH_SHORT).show();
-                        for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
-
-                            Long times =  Long.valueOf(snapshot.child("TimeStamp").getValue().toString());
-                            Log.i(TAG, "onDataChange: Long time "+ getDataTimeStamp(times));
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
-                mMessageEditText.setText("");
+//                if( !mUid.equals(senderUid)) {
+//
+//                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
+//                }
+               mMessageEditText.setText("");
             }
         });
 
@@ -425,45 +439,6 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
     }
-
-
-//    private Indexable getMessageIndexable(FriendlyMessage friendlyMessage) {
-//        PersonBuilder sender = Indexables.personBuilder()
-//                .setIsSelf(mUsername.equals(friendlyMessage.getName()))
-//                .setName(friendlyMessage.getName())
-//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/sender"));
-//
-//        PersonBuilder recipient = Indexables.personBuilder()
-//                .setName(mUsername)
-//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/recipient"));
-//
-//        Indexable messageToIndex = Indexables.messageBuilder()
-//                .setName(friendlyMessage.getStatus())
-//                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId()))
-//                .setSender(sender)
-//                .setRecipient(recipient)
-//                .build();
-//
-//        return messageToIndex;
-//    }
-
-//    @Override
-//    protected void onBindViewHolder(final UserViewHolder viewHolder, FriendlyMessage friendlyMessage, int position) {
-//
-//        if (friendlyMessage.getStatus() != null) {
-//            // write this message to the on-device index
-//            FirebaseAppIndex.getInstance()
-//                    .update(getMessageIndexable(friendlyMessage));
-//        }
-//
-//    }
-
-//    private Action getMessageViewAction(FriendlyMessage friendlyMessage) {
-//        return new Action.Builder(Action.Builder.VIEW_ACTION)
-//                .setObject(friendlyMessage.getName(), MESSAGE_URL.concat(friendlyMessage.getId()))
-//                .setMetadata(new Action.Metadata.Builder().setUpload(false))
-//                .build();
-//    }
 
     private void userIsTyping(boolean isUserTyping) {
 
@@ -488,10 +463,7 @@ public class OneToOneChat extends AppCompatActivity
 
                 }
             });
-//            if(typingStatus.getVisibility()==View.INVISIBLE)
-//            {
-//                typingStatus.setVisibility(View.VISIBLE);
-//            }
+
             CheckTypingStatus();
         }
     }
@@ -545,16 +517,6 @@ public class OneToOneChat extends AppCompatActivity
         });
     }
 
-//    public void SendFirebaseMessage() {
-//
-//        FirebaseMessaging fm = FirebaseMessaging.getInstance();
-//        fm.send(new RemoteMessage.Builder("83407382779" + "@gcm.googleapis.com")
-//                .setMessageId(Integer.toString(msgId.incrementAndGet()))
-//                .addData("key-1", "value-1")
-//                .addData("key-2", "value-2")
-//                .build());
-//    }
-
     public void getCurrentUser() {
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
@@ -565,39 +527,13 @@ public class OneToOneChat extends AppCompatActivity
             return;
         } else {
 
-            String uidOfUser = mFirebaseUser.getUid();
-//            UpdateUserDetails(uidOfUser);
-
+            mUid = mFirebaseUser.getUid();
             mUsername = mFirebaseUser.getDisplayName();
             if (mFirebaseUser.getPhotoUrl() != null) {
                 mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
             }
         }
     }
-
-  //  public void UpdateUserDetails(final String uidOfUser) {
-
-  //      Map<String,Object> tokenIdForDB = new HashMap<>();
-
-    //    String deviceToken = FirebaseInstanceId.getInstance().getToken();
-//        usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                if(dataSnapshot.hasChild(uidOfUser)) {
-//
-//                    Log.i(TAG, "onDataChange: "+mFirebaseUser.getDisplayName()+" exists");
-////                    if(dataSnapshot.child(uidOfUser).hasChild()))
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
-//        tokenIdForDB.put("tokenId",deviceToken);
-//        usersRef.child(uidOfUser).updateChildren(tokenIdForDB);
- //   }
 
     @Override
     public void onStart() {
@@ -686,22 +622,6 @@ public class OneToOneChat extends AppCompatActivity
                     }
                 });
     }
-
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//
-//        switch (item.getItemId()) {
-//            case R.id.sign_out_menu:
-//                mFirebaseAuth.signOut();
-//                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
-//                mUsername = ANONYMOUS;
-//                startActivity(new Intent(this, SignInActivity.class));
-//                finish();
-//                return true;
-//            default:
-//                return super.onOptionsItemSelected(item);
-//        }
-//    }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
