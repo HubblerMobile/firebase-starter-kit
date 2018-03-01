@@ -3,7 +3,6 @@ package com.google.firebase.codelab.friendlychat;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -19,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -69,9 +69,10 @@ public class OneToOneChat extends AppCompatActivity
     private DatabaseReference mFirebaseDatabaseReference;
     private DatabaseReference conversationsRef;
     private DatabaseReference typingStatusRef;
-    private DatabaseReference currentChat;
+    private DatabaseReference senderChatRef;
+    private DatabaseReference receiverChatRef;
     private DatabaseReference recentChats;
-//    private DatabaseReference notificationRef;
+    private DatabaseReference notificationRef;
     private DatabaseReference usersRef;
 
 
@@ -138,7 +139,7 @@ public class OneToOneChat extends AppCompatActivity
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
 //        conversationsRef.keepSynced(true);
-//        notificationRef = mFirebaseDatabaseReference.child("Notification");
+        notificationRef = mFirebaseDatabaseReference.child("Notification");
         typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
         recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
         usersRef = mFirebaseDatabaseReference.child(USERS_LIST);
@@ -146,6 +147,10 @@ public class OneToOneChat extends AppCompatActivity
         senderUid = intent.getStringExtra("sender");
         recieverUid = intent.getStringExtra("receiver");
 
+        if((senderUid !=null && !senderUid.isEmpty()) && (recieverUid != null && !recieverUid.isEmpty()))
+        {
+
+        }
         usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -159,44 +164,40 @@ public class OneToOneChat extends AppCompatActivity
 
             }
         });
-//        currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
-
-        conversationsRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
-               for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
-
-                   String conversationKey = snapshot.getKey();
-                   Log.i(TAG, "onDataChange: Chat UID "+conversationKey);
-
-                   if(conversationKey.equals(senderUid +" chat with"+recieverUid))
-                   {
-                       currentChat = conversationsRef.child(senderUid+" chat with "+recieverUid);
-                       SetOptionsFirebaseAdapter(currentChat);
-                       return;
-                   }
-                   else if(conversationKey.equals((recieverUid+" chat with "+senderUid)))
-                   {
-                       currentChat = conversationsRef.child(recieverUid+" chat with "+senderUid);
-                       SetOptionsFirebaseAdapter(currentChat);
-                       return;
-                   }
-//                   else
+        Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
+        senderChatRef = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+        receiverChatRef = conversationsRef.child(recieverUid+" chat with "+ senderUid);
+//        conversationsRef.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//               for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
+//
+//                   String conversationKey = snapshot.getKey();
+//                   Log.i(TAG, "onDataChange: Chat UID "+conversationKey);
+//                   if(conversationKey.equals(senderUid +" chat with"+recieverUid))
 //                   {
-//                       Log.i(TAG, "onDataChange: New Conversation Started");
-//                       currentChat = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+//                       senderChatRef = conversationsRef.child(senderUid+" chat with "+recieverUid);
 //                   }
-               }
-            }
-
-
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
+//                   else if(conversationKey.equals((recieverUid+" chat with "+senderUid)))
+//                   {
+//                       senderChatRef = conversationsRef.child(recieverUid+" chat with "+senderUid);
+//                   }
+////                   else
+////                   {
+////                       Log.i(TAG, "onDataChange: New Conversation Started");
+////                       senderChatRef = conversationsRef.child(senderUid +" chat with "+ recieverUid);
+////                   }
+//               }
+//            }
+//
+//
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -211,7 +212,16 @@ public class OneToOneChat extends AppCompatActivity
         mLinearLayoutManager.setStackFromEnd(true);
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-
+        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
+            @Override
+            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
+                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                if (friendlyMessage != null) {
+                    friendlyMessage.setId(dataSnapshot.getKey());
+                }
+                return friendlyMessage;
+            }
+        };
 
         typingStatusRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -291,127 +301,12 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
 
-
-        mMessageEditText =  findViewById(R.id.messageEditText);
-
-        mMessageEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-//                Log.i(TAG, "beforeTextChanged: ");
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if(!isDelayCheckRunning)
-                {
-                    userIsTyping(true);
-                }
-            }
-        });
-
-
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
-                .getInt(CodelabPreferences.FRIENDLY_MSG_LENGTH, DEFAULT_MSG_LENGTH_LIMIT))});
-        mMessageEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (charSequence.toString().trim().length() > 0) {
-                    mSendButton.setEnabled(true);
-                } else {
-                    mSendButton.setEnabled(false);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-            }
-        });
-
-        mSendButton = (Button) findViewById(R.id.sendButton);
-        mSendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                FriendlyMessage friendlyMessage = new
-                        FriendlyMessage(mMessageEditText.getText().toString(),
-                        mUsername,
-                        mPhotoUrl,
-                        null /* no image */);
-                currentChat
-                        .push().setValue(friendlyMessage);
-
-                      Map<String,Object> lastChatMessage = new HashMap<>();
-
-                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
-                      lastChatMessage.put("uid", senderUid);
-                      lastChatMessage.put("timeStamp", timeStamp);
-                      lastChatMessage.put("name", recieverUsername);
-                      lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
-                      lastChatMessage.put("photoUrl", mPhotoUrl);
-
-//                      mFirebaseDatabaseReference.child("hfjkks").setValue(lastChatMessage);
-
-
-                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
-                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
-
-//                if( !mUid.equals(senderUid)) {
-//
-//                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
-//                }
-               mMessageEditText.setText("");
-            }
-        });
-
-        mAddMessageImageView = (ImageView) findViewById(R.id.addMessageImageView);
-        mAddMessageImageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("image/*");
-                startActivityForResult(intent, REQUEST_IMAGE);
-            }
-        });
-
-
-
-
-    }
-
-    private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
-
-        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
-            @Override
-            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                if (friendlyMessage != null) {
-                    friendlyMessage.setId(dataSnapshot.getKey());
-                }
-                return friendlyMessage;
-            }
-        };
-
         FirebaseRecyclerOptions<FriendlyMessage> options =
                 new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-                        .setQuery(queryBranch, parser)
+                        .setQuery(senderChatRef, parser)
                         .build();
 
-        Toast.makeText(this, queryBranch.getKey(), Toast.LENGTH_SHORT).show();
-        callFirebaseAdpater(options);
-    }
 
-    private void callFirebaseAdpater(FirebaseRecyclerOptions<FriendlyMessage> options)
-    {
         mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
             @Override
             public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
@@ -465,6 +360,114 @@ public class OneToOneChat extends AppCompatActivity
         });
 
         mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+        mMessageEditText =  findViewById(R.id.messageEditText);
+
+        mMessageEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+//                Log.i(TAG, "beforeTextChanged: ");
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if(!isDelayCheckRunning)
+                {
+                    userIsTyping(true);
+                }
+            }
+        });
+
+
+        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
+                .getInt(CodelabPreferences.FRIENDLY_MSG_LENGTH, DEFAULT_MSG_LENGTH_LIMIT))});
+        mMessageEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (charSequence.toString().trim().length() > 0) {
+                    mSendButton.setEnabled(true);
+                } else {
+                    mSendButton.setEnabled(false);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+
+        mSendButton = (Button) findViewById(R.id.sendButton);
+        mSendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FriendlyMessage friendlyMessage = new
+                        FriendlyMessage(mMessageEditText.getText().toString(),
+                        mUsername,
+                        mPhotoUrl,
+                        null /* no image */);
+
+                //                 Add message to notification branch
+                HashMap<String,String> notification_msg = new HashMap<>();
+                notification_msg.put("uid",mFirebaseUser.getUid());
+                notification_msg.put("email",mFirebaseUser.getEmail());
+                notification_msg.put("type","invitation");
+                notification_msg.put("msg",mMessageEditText.getText().toString());
+
+                senderChatRef.push().setValue(friendlyMessage);
+                receiverChatRef.push().setValue(friendlyMessage);
+                notificationRef.child(mUid).child(recieverUid).setValue(notification_msg);
+
+
+                Map<String,Object> lastChatMessage = new HashMap<>();
+
+                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+                      lastChatMessage.put("senderUid", mUid);
+                      lastChatMessage.put("timeStamp", timeStamp);
+                      lastChatMessage.put("name", recieverUsername);
+                      lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
+                      lastChatMessage.put("photoUrl", recieverPhotoUrl);
+
+                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
+                lastChatMessage.put("name",mUsername);
+                lastChatMessage.put("photoUrl",mPhotoUrl);
+                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
+
+//                if( !mUid.equals(senderUid)) {
+//
+//                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
+//                }
+               mMessageEditText.setText("");
+            }
+        });
+
+        mAddMessageImageView = (ImageView) findViewById(R.id.addMessageImageView);
+        mAddMessageImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                startActivityForResult(intent, REQUEST_IMAGE);
+            }
+        });
+
+
+
+
+    }
+
+    private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
+
+
     }
     private void userIsTyping(boolean isUserTyping) {
 
@@ -570,14 +573,12 @@ public class OneToOneChat extends AppCompatActivity
 
     @Override
     public void onPause() {
-       if(mFirebaseAdapter!=null)
         mFirebaseAdapter.stopListening();
         super.onPause();
     }
 
     @Override
     public void onResume() {
-        if(mFirebaseAdapter!=null)
         mFirebaseAdapter.startListening();
         super.onResume();
     }
@@ -593,6 +594,12 @@ public class OneToOneChat extends AppCompatActivity
         inflater.inflate(R.menu.main_menu, menu);
         return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return super.onOptionsItemSelected(item);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

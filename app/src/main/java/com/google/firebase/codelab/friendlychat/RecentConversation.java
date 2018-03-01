@@ -1,19 +1,26 @@
 package com.google.firebase.codelab.friendlychat;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +29,7 @@ import com.bumptech.glide.Glide;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.firebase.ui.database.SnapshotParser;
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,9 +40,12 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -48,9 +59,13 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     private FirebaseUser mFirebaseUser;
 
     private DatabaseReference mFirebaseDatabaseReference;
+    private DatabaseReference conversationsRef;
     private DatabaseReference recentChatsRef;
 
+    private GoogleApiClient mGoogleApiClient;
+
     private String sender;
+    public static final String CONVERSATIONS = "conversations";
 
     private FirebaseRecyclerAdapter<FriendlyMessage, RecentChatViewHolder> mFirebaseAdapter;
 
@@ -85,8 +100,15 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         recentChatsRef = mFirebaseDatabaseReference.child(RECENT_CHATS);
+        conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+                .addApi(Auth.GOOGLE_SIGN_IN_API)
+                .build();
+
         getCurrentUser();
         if(mFirebaseAuth.getCurrentUser() == null)
         {
@@ -128,67 +150,6 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
 
                 Log.i("Query", "parseSnapshot: "+dataSnapshot.getValue());
                 FriendlyMessage msgObj = dataSnapshot.getValue(FriendlyMessage.class);
-//                  lastmsg.addValueEventListener(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(DataSnapshot msgSnap) {
-//
-//                        for(DataSnapshot lastSnap: msgSnap.getChildren())
-//                        {
-//                            lastSnap.getValue();
-//                            lastMessageObj[0] = lastSnap.getValue(FriendlyMessage.class);
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(DatabaseError databaseError) {
-//
-//                    }
-//                });
-
-//                dataSnapshot.getRef().addValueEventListener(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                        String ConversationKeys = dataSnapshot.getKey();
-//                        Query x = mFirebaseDatabaseReference.child("conversations").child(sender + " chat with " + ConversationKeys).getRef().orderByKey().limitToLast(1);
-//
-//
-//                        x.addListenerForSingleValueEvent(new ValueEventListener() {
-//                            @Override
-//                            public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                                dataSnapshot.getValue();
-//
-//                                for(DataSnapshot messageSnapshot: dataSnapshot.getChildren()) {
-//
-//                                    Log.i("MessageLast", "onDataChange: MessageSnapshot "+messageSnapshot.getValue());
-//                                    FriendlyMessage obsdd = messageSnapshot.getValue(FriendlyMessage.class);
-//                                    recentChatObject.add(obsdd);
-//                                    Log.i("dd", "onDataChange: "+obsdd);
-//                                }
-//                            }
-//
-//                            @Override
-//                            public void onCancelled(DatabaseError databaseError) {
-//
-//                            }
-//                        });
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(DatabaseError databaseError) {
-//
-//                    }
-//                });
-//                FriendlyMessage temp_obj = new FriendlyMessage();
-//               for(int i=0;i < recentChatObject.size();i++) {
-//
-//                   temp_obj = recentChatObject.get(i);
-//               }
-//               if(temp_obj!=null)
-//               {
-//                   return temp_obj;
-//               }
                 return msgObj;        // Testing
             }
         };
@@ -202,26 +163,6 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
                         .setQuery(query,parser)
                         .build();
-
-//        mFirebaseDatabaseReference.child("iUlC1L0fyYa5JsoUtYz8bGvMtFk2").addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                FirebaseRecyclerOptions<FriendlyMessage> options =
-//                        new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-//                                .setQuery(dataSnapshot.getRef())
-//                                .build();
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        })
-//        FirebaseRecyclerOptions<FriendlyMessage> options =
-//                new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-//                        .setSnapshotArray(keyQuery,parser)
-//                        .build();
 
         //FIREBASE RECYLER ADAPTER
         mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, RecentChatViewHolder>(options) {
@@ -267,7 +208,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
 
                             @Override
                             public void onCancelled(DatabaseError databaseError) {
-                                Toast.makeText(RecentConversation.this, "Event was cancelledd", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(RecentConversation.this, "Event was cancelled", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -311,6 +252,116 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         super.onStart();
         // Check if user is signed in.
         // TODO: Add code to check if user is signed in.
+    }
+    public void UpdateUserDetails(final String uidOfUser) {
+
+        final Map<String,Object> tokenIdForDB = new HashMap<>();
+
+        final DatabaseReference temp_ref = FirebaseDatabase.getInstance().getReference().child("usersList");
+
+        String deviceToken = FirebaseInstanceId.getInstance().getToken();
+        tokenIdForDB.put("tokenId",deviceToken);
+
+        temp_ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(dataSnapshot.hasChild(uidOfUser)) {
+
+//                    Log.i("Display Name", "onDataChange: "+mFirebaseUser.getDisplayName()+" exists");
+                    temp_ref.child(uidOfUser).updateChildren(tokenIdForDB);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.sign_out_menu:
+                mFirebaseAuth.signOut();
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+//                mUsername = "Guest";
+                startActivity(new Intent(this, SignInActivity.class));
+                finish();
+                return true;
+            case R.id.create_grp:
+                createGrp();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void createGrp() {
+        Log.i("grp", "createGrp: Creating group");
+        Toast.makeText(this, "Creating group", Toast.LENGTH_SHORT).show();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(RecentConversation.this,R.style.MyDialogTheme);
+        builder.setTitle("Create Group");
+
+//        final TextInputLayout =
+        View viewInflated = LayoutInflater.from(RecentConversation.this).inflate(R.layout.create_grp_popup, (ViewGroup) findViewById(android.R.id.content), false);
+        final EditText input = viewInflated.findViewById(R.id.create_grp_textField);
+        builder.setView(viewInflated);
+
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+                String TextEntered = input.getText().toString();
+                AddGroupToDb(TextEntered);
+
+                Log.i("Text entered", "onClick: "+TextEntered);
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+                dialogInterface.cancel();
+            }
+        });
+        builder.show();
+    }
+
+    private void AddGroupToDb(final String grpName) {
+
+        conversationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(! dataSnapshot.hasChild(grpName))
+                {
+                    conversationsRef.child(grpName).setValue("No conversations Yet");
+                    Intent myIntent = new Intent(RecentConversation.this, OneToOneChat.class);
+//                    myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
+//                    myIntent.putExtra("receiver",receiver);
+                    RecentConversation.this.startActivity(myIntent);
+                }
+                else {
+                    Toast.makeText(RecentConversation.this, "Group already exist!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate( R.menu.main_menu,menu);
+
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override

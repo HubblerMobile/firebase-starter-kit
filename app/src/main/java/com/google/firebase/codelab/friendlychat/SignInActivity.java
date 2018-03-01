@@ -99,13 +99,12 @@ public class SignInActivity extends AppCompatActivity implements
 
                 if(task.isSuccessful()) {
 
-                    MainActivity mainActivity = new MainActivity();
                     FirebaseUser registeredUser = task.getResult().getUser();
 //                    mainActivity.AddUserToDatbase(registeredUser);
-                    String deviceToken = FirebaseInstanceId.getInstance().getToken();
+//                    String deviceToken = FirebaseInstanceId.getInstance().getToken();
                     String uidOfUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    mainActivity.UpdateUserDetails(uidOfUser);
-                    Intent mainIntent = new Intent(SignInActivity.this,MainActivity.class);
+//                    recentConversation.UpdateUserDetails(uidOfUser);
+                    Intent mainIntent = new Intent(SignInActivity.this,RecentConversation.class);
                     startActivity(mainIntent);
                     finish();
                 }else {
@@ -156,7 +155,9 @@ public class SignInActivity extends AppCompatActivity implements
                                     Toast.LENGTH_SHORT).show();
                         }
                         else {
-
+                            String uidOfUser = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                            RecentConversation recentConversation = new RecentConversation();
+                            recentConversation.UpdateUserDetails(uidOfUser);
                             startActivity(new Intent(SignInActivity.this, RecentConversation.class));
                             finish();
                         }

@@ -92,55 +92,35 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
             @Override
             public UserObject parseSnapshot(DataSnapshot dataSnapshot) {
 
-//                Log.i(TAG, "parseSnapshot: "+dataSnapshot.getKey());
                 UserObject userObject = dataSnapshot.getValue(UserObject.class);
-//                if (userObject != null) {
-//
-//                    // show all users except your own.
-////                    if(!userObject.getId().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
-//                    if(!userObject.getId().equals("iUlC1L0fyYa5JsoUtYz8bGvMtFk2"))
-//                    {
-//                        userObject.setId(dataSnapshot.getKey());
-//                        return userObject;
-//                    }
-//
-//                }
+
                 return userObject;
-//                return null;
             }
         };
 
 // Remove your name from the chat user list so that only other users are visible.
         Query query = listOfUsersRef.orderByKey();
-         query.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                UserObject me = null;
-                DatabaseReference addBackUserAt = null;
-                for (DataSnapshot requiredSnap: dataSnapshot.getChildren())
-                {
-                    if(requiredSnap.getKey().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
-                    {
-                         me = requiredSnap.getValue(UserObject.class);
-                        addBackUserAt = requiredSnap.getRef();
-                        requiredSnap.getRef().removeValue();
+//         query.addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                UserObject me = null;
+//                DatabaseReference addBackUserAt = null;
+//                for (DataSnapshot requiredSnap: dataSnapshot.getChildren())
+//                {
+//                    if(requiredSnap.getKey().equals(FirebaseAuth.getInstance().getCurrentUser().getUid()))
+//                    {
+////                         me = requiredSnap.getValue(UserObject.class);
+//
+////                        Log.i(TAG, "onDataChange: "+me);
+//                    }
+//                }
+//            }
 
-                        Log.i(TAG, "onDataChange: "+me);
-                    }
-                }
-
-                if(me!=null && addBackUserAt!=null) {
-
-                    addBackUserAt.setValue(me);
-                }
-            }
-
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//
+//            }
+//        });
 
 
         Log.i(TAG, "onCreate: Parsed Query "+query);

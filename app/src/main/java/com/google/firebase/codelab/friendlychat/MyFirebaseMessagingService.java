@@ -15,6 +15,8 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -28,14 +30,22 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
     private static final String TAG = "MyFMService";
 
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        // Handle data payload of FCM messages.
-        if(remoteMessage.getData().size() > 0) {
-            Map<String,String> payload = remoteMessage.getData();
-            showNotification(payload);
-        }
-        Log.d(TAG, "FCM Message Id: " + remoteMessage.getMessageId());
-        Log.d(TAG, "FCM Notification Message: " + remoteMessage.getNotification());
-        Log.d(TAG, "FCM Data Message: " + remoteMessage.getData());
+
+
+        String notification_title = remoteMessage.getNotification().getTitle();
+        String notification_msg = remoteMessage.getNotification().getBody();
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this,"notific id");
+        notificationBuilder
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(notification_title)
+                .setContentText(notification_msg)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        int mNotificationId = (int) System.currentTimeMillis();
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.notify(mNotificationId,notificationBuilder.build());
+
     }
 
     private void showNotification(Map<String, String> payload) {
