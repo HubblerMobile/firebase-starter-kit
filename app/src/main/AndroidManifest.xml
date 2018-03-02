@@ -50,6 +50,10 @@
             android:configChanges="orientation|keyboardHidden|screenSize">
 
         </activity>
+        <activity android:name=".GroupChat"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+
+        </activity>
     </application>
 
 </manifest>

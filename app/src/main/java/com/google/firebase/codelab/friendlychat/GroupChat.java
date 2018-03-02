@@ -57,11 +57,11 @@ import java.util.Map;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
- * Created by hubbler-sudesh on 22/02/18.
+ * Created by hubbler-sudesh on 02/03/18.
  */
 
-public class OneToOneChat extends AppCompatActivity
-        implements GoogleApiClient.OnConnectionFailedListener {
+public class GroupChat extends AppCompatActivity
+        implements GoogleApiClient.OnConnectionFailedListener  {
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mFirebaseUser;
@@ -69,7 +69,7 @@ public class OneToOneChat extends AppCompatActivity
     private DatabaseReference mFirebaseDatabaseReference;
     private DatabaseReference conversationsRef;
     private DatabaseReference typingStatusRef;
-    private DatabaseReference senderChatRef;
+    private DatabaseReference grpChatRef;
     private DatabaseReference receiverChatRef;
     private DatabaseReference recentChats;
     private DatabaseReference notificationRef;
@@ -82,7 +82,7 @@ public class OneToOneChat extends AppCompatActivity
     private List<String> usersTyping = new ArrayList<String>();
     private Map<String,String> userWhoAreTyping = new HashMap<>();
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "GroupChat";
     public static final String CONVERSATIONS = "conversations";
     public static final String TYPING_STATUS = "users_typing";
     public static final String RECENT_CHATS = "recent_chats";
@@ -146,33 +146,24 @@ public class OneToOneChat extends AppCompatActivity
         recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
         usersRef = mFirebaseDatabaseReference.child(USERS_LIST);
         Intent intent = getIntent();
-        senderUid = intent.getStringExtra("sender");
-        recieverUid = intent.getStringExtra("receiver");
         grpName = intent.getStringExtra("grpName");
+        grpChatRef = conversationsRef.child(grpName);
 
-        if((senderUid !=null && !senderUid.isEmpty()) && (recieverUid != null && !recieverUid.isEmpty()))
-        {
-            usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
+//            usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//                    recieverUsername = dataSnapshot.child("grpName").getValue().toString();
+//                    recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
+//                }
+//
+//                @Override
+//                public void onCancelled(DatabaseError databaseError) {
+//
+//                }
+//            });
 
-                    recieverUsername = dataSnapshot.child("name").getValue().toString();
-                    recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-
-            Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
-            senderChatRef = conversationsRef.child(senderUid +" chat with "+ recieverUid);
-            receiverChatRef = conversationsRef.child(recieverUid+" chat with "+ senderUid);
-        }
-        else if( grpName !=null && !grpName.isEmpty()) {
-            Log.i(TAG, "onCreate: Group name available");
-        }
+            Toast.makeText(this, grpName+" is current chat group", Toast.LENGTH_SHORT).show();
 
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
@@ -279,7 +270,7 @@ public class OneToOneChat extends AppCompatActivity
 
         FirebaseRecyclerOptions<FriendlyMessage> options =
                 new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
-                        .setQuery(senderChatRef, parser)
+                        .setQuery(grpChatRef, parser)
                         .build();
 
 
@@ -289,7 +280,6 @@ public class OneToOneChat extends AppCompatActivity
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
                 return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
             }
-
 
             @Override
             protected void onBindViewHolder(final MessageViewHolder viewHolder,
@@ -307,10 +297,10 @@ public class OneToOneChat extends AppCompatActivity
 
                 viewHolder.messengerTextView.setText(friendlyMessage.getName());
                 if (friendlyMessage.getPhotoUrl() == null) {
-                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
-                    Glide.with(OneToOneChat.this)
+                    Glide.with(GroupChat.this)
                             .load(friendlyMessage.getPhotoUrl())
                             .into(viewHolder.messengerImageView);
                 }
@@ -394,33 +384,50 @@ public class OneToOneChat extends AppCompatActivity
                 HashMap<String,String> notification_msg = new HashMap<>();
                 notification_msg.put("uid",mFirebaseUser.getUid());
                 notification_msg.put("email",mFirebaseUser.getEmail());
-                notification_msg.put("type","invitation");
+                notification_msg.put("type","Message");
                 notification_msg.put("msg",mMessageEditText.getText().toString());
 
-                senderChatRef.push().setValue(friendlyMessage);
-                receiverChatRef.push().setValue(friendlyMessage);
-                notificationRef.child(mUid).child(recieverUid).setValue(notification_msg);
+                grpChatRef.push().setValue(friendlyMessage);
+//                receiverChatRef.push().setValue(friendlyMessage);
+//                notificationRef.child(mUid).child(recieverUid).setValue(notification_msg);
 
 
-                Map<String,Object> lastChatMessage = new HashMap<>();
+                final Map<String,Object> lastChatMessage = new HashMap<>();
 
                 Map<String, String> timeStamp = ServerValue.TIMESTAMP;
-                      lastChatMessage.put("senderUid", mUid);
-                      lastChatMessage.put("timeStamp", timeStamp);
-                      lastChatMessage.put("name", recieverUsername);
-                      lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
-                      lastChatMessage.put("photoUrl", recieverPhotoUrl);
+                lastChatMessage.put("type", "Group");
+                lastChatMessage.put("senderUid", mUid);
+                lastChatMessage.put("timeStamp", timeStamp);
+                lastChatMessage.put("name", grpName);
+                lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
+                lastChatMessage.put("photoUrl", "https://image.freepik.com/free-icon/group-profile-users_318-41953.jpg");
 
-                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
-                lastChatMessage.put("name",mUsername);
-                lastChatMessage.put("photoUrl",mPhotoUrl);
-                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
+                recentChats.child(mUid).child(grpName).setValue(lastChatMessage);
+
+                recentChats.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        for(DataSnapshot userSnap:dataSnapshot.getChildren())
+                        {
+                            userSnap.child(grpName).getRef().setValue(lastChatMessage);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+                lastChatMessage.put("name",grpName);
+//                lastChatMessage.put("photoUrl",);
+//                recentChats.child(recieverUid).child("Group").child(grpName).setValue(lastChatMessage);
 
 //                if( !mUid.equals(senderUid)) {
 //
 //                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
 //                }
-               mMessageEditText.setText("");
+                mMessageEditText.setText("");
             }
         });
 
@@ -615,7 +622,7 @@ public class OneToOneChat extends AppCompatActivity
     }
 
     private void putImageInStorage(StorageReference storageReference, Uri uri, final String key) {
-        storageReference.putFile(uri).addOnCompleteListener(OneToOneChat.this,
+        storageReference.putFile(uri).addOnCompleteListener(GroupChat.this,
                 new OnCompleteListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {

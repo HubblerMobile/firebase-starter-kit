@@ -140,17 +140,32 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 startActivity(new Intent(RecentConversation.this,SelectUserToChat.class));
             }
         });
-        final List<FriendlyMessage> recentChatObject = new ArrayList<>();
-
-
+//        final List<FriendlyMessage> recentChatObject = new ArrayList<>();
 
         SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
             @Override
             public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
 
+                FriendlyMessage msgObj = new FriendlyMessage();
+                FriendlyMessage grpObj = new FriendlyMessage();
+                boolean grpObjFound = false;
+
+                if(dataSnapshot.getKey().toString().equals("Group"))
+                {
+                    for(DataSnapshot snapshot:dataSnapshot.getChildren())
+                    {
+                        grpObj = snapshot.getValue(FriendlyMessage.class);
+                        grpObjFound = true;
+                        return grpObj;
+                    }
+                    grpObjFound = false;
+                }
+                msgObj = dataSnapshot.getValue(FriendlyMessage.class);
                 Log.i("Query", "parseSnapshot: "+dataSnapshot.getValue());
-                FriendlyMessage msgObj = dataSnapshot.getValue(FriendlyMessage.class);
-                return msgObj;        // Testing
+                if(!grpObjFound)
+                    return msgObj;        // Testing
+                else
+                    return grpObj;
             }
         };
 
@@ -199,11 +214,23 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                             public void onDataChange(DataSnapshot dataSnapshot) {
 
                                 String receiver = dataSnapshot.getKey();
-//                                Toast.makeText(SelectUserToChat.this, "Name is "+receiver, Toast.LENGTH_SHORT).show();
+
+                               if(dataSnapshot.hasChild("type"))
+                               {
+                                   if(dataSnapshot.child("type").getValue().equals("Group"))
+                                   {
+                                       Intent myIntent = new Intent(RecentConversation.this, GroupChat.class);
+                                       myIntent.putExtra("grpName",dataSnapshot.child("name").getValue().toString());
+                                       RecentConversation.this.startActivity(myIntent);
+                                       return;
+                                   }
+                               }
+
                                 Intent myIntent = new Intent(RecentConversation.this, OneToOneChat.class);
                                 myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
                                 myIntent.putExtra("receiver",receiver);
                                 RecentConversation.this.startActivity(myIntent);
+//                                finish();
                             }
 
                             @Override
@@ -329,6 +356,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         builder.show();
     }
 
+    // Called by createGrp function
     private void AddGroupToDb(final String grpName) {
 
         conversationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -337,9 +365,9 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 if(! dataSnapshot.hasChild(grpName))
                 {
                     conversationsRef.child(grpName).setValue("No conversations Yet");
-                    Intent myIntent = new Intent(RecentConversation.this, OneToOneChat.class);
+                    Intent myIntent = new Intent(RecentConversation.this, GroupChat.class);
 //                    myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
-//                    myIntent.putExtra("receiver",receiver);
+                    myIntent.putExtra("grpName",grpName);
                     RecentConversation.this.startActivity(myIntent);
                 }
                 else {
