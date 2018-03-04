@@ -17,26 +17,50 @@ package com.google.firebase.codelab.friendlychat;
 
 import android.app.NotificationManager;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Map;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService{
 
     private static final String TAG = "MyFMService";
+    Bitmap bitmap = getBitmapFromURL("Your URL");
+
+    public Bitmap getBitmapFromURL(String strURL) {
+        try {
+            URL url = new URL(strURL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
 
         String notification_title = remoteMessage.getNotification().getTitle();
         String notification_msg = remoteMessage.getNotification().getBody();
+        String notification_icon = remoteMessage.getNotification().getIcon();
+        Bitmap myIconBitMap = getBitmapFromURL(notification_icon);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this,"notific id");
         notificationBuilder
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(myIconBitMap)
                 .setContentTitle(notification_title)
                 .setContentText(notification_msg)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);

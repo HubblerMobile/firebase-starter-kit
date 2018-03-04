@@ -3,6 +3,7 @@ package com.google.firebase.codelab.friendlychat;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -65,6 +66,9 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     private GoogleApiClient mGoogleApiClient;
 
     private String sender;
+    private String mName;
+    private String mEmail;
+    private String mPhotoUrl;
     public static final String CONVERSATIONS = "conversations";
 
     private FirebaseRecyclerAdapter<FriendlyMessage, RecentChatViewHolder> mFirebaseAdapter;
@@ -103,14 +107,13 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
 
-        getCurrentUser();
-        if(mFirebaseAuth.getCurrentUser() == null)
+//        getCurrentUser();
+        if(mFirebaseUser == null)
         {
             Intent intent = new Intent(RecentConversation.this,SignInActivity.class);
             startActivity(intent);
@@ -118,10 +121,8 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
             return;
         }
         else {
-            sender = mFirebaseUser.getUid();
+            getCurrentUser();
         }
-
-
         setContentView(R.layout.activity_recent_conversation);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -140,6 +141,8 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 startActivity(new Intent(RecentConversation.this,SelectUserToChat.class));
             }
         });
+//        CheckIfTokenIdExists();
+
 //        final List<FriendlyMessage> recentChatObject = new ArrayList<>();
 
         SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
@@ -278,32 +281,28 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     public void onStart() {
         super.onStart();
         // Check if user is signed in.
+
+
         // TODO: Add code to check if user is signed in.
     }
-    public void UpdateUserDetails(final String uidOfUser) {
 
-        final Map<String,Object> tokenIdForDB = new HashMap<>();
+    public void UpdateUserDetails() {
+
+//        getCurrentUser();
+        final Map<String,Object> userDetailsWithTokenId = new HashMap<>();
 
         final DatabaseReference temp_ref = FirebaseDatabase.getInstance().getReference().child("usersList");
 
         String deviceToken = FirebaseInstanceId.getInstance().getToken();
-        tokenIdForDB.put("tokenId",deviceToken);
+        userDetailsWithTokenId.put("email",mEmail);
+        userDetailsWithTokenId.put("id",sender);
+        userDetailsWithTokenId.put("name",mName);
+        userDetailsWithTokenId.put("photoUrl",mPhotoUrl);
+        userDetailsWithTokenId.put("status","Happy Hubblering");
+        userDetailsWithTokenId.put("tokenId",deviceToken);
 
-        temp_ref.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.hasChild(uidOfUser)) {
+        temp_ref.child(sender).setValue(userDetailsWithTokenId);
 
-//                    Log.i("Display Name", "onDataChange: "+mFirebaseUser.getDisplayName()+" exists");
-                    temp_ref.child(uidOfUser).updateChildren(tokenIdForDB);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -419,11 +418,10 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
 
     public void getCurrentUser() {
 
-        if (mFirebaseUser == null) {
-            // Not signed in, launch the Sign In activity
-            startActivity(new Intent(this, SignInActivity.class));
-            finish();
-            return;
-        }
+            sender = mFirebaseUser.getUid();
+            mEmail = mFirebaseUser.getEmail();
+            mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
+            mName = mFirebaseUser.getDisplayName();
+            UpdateUserDetails();
     }
 }
