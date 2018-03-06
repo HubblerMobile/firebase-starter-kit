@@ -5,19 +5,25 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
@@ -35,19 +41,33 @@ import com.google.firebase.database.ValueEventListener;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class SelectUserToChat extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
+public class CreateGroup extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,View.OnLongClickListener{
 
     private DatabaseReference mFirebaseDatabaseReference;
     private DatabaseReference listOfUsersRef;
+    private DatabaseReference conversationsRef;
 
     private FirebaseAuth mFirebaseAuth;
-    private FirebaseRecyclerAdapter<UserObject, UserViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<UserObject, CreateGroup.UserViewHolder> mFirebaseAdapter;
 
     private String mUid;
+    private TextInputLayout textInp_groupName;
+    FloatingActionButton fab_createGroup;
+    Toolbar toolbar;
+    
+
+    @Override
+    public boolean onLongClick(View view) {
+
+        toolbar.getMenu().clear();
+        return false;
+    }
+
     public static class UserViewHolder extends RecyclerView.ViewHolder {
         TextView StatusTextView;
         TextView userDisplayNameTextView;
         CircleImageView userProfileImageView;
+        CreateGroup createGroup;
         View viewItem;
 
         public UserViewHolder(View itemView) {
@@ -55,7 +75,8 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
             StatusTextView = itemView.findViewById(R.id.text);
             userDisplayNameTextView =  itemView.findViewById(R.id.userName);
             userProfileImageView =  itemView.findViewById(R.id.userProfilePic);
-
+            this.createGroup = createGroup;
+            itemView.setOnLongClickListener(createGroup);
             this.viewItem = itemView;
         }
     }
@@ -65,19 +86,36 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
     private SharedPreferences mSharedPreferences;
 
-    private RecyclerView mMessageRecyclerView;
+    private RecyclerView mSelectMemberRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_select_user_to_chat);
+        setContentView(R.layout.activity_create_group);
 
-        Toolbar mToolbar = findViewById(R.id.selectUserToChatToolbar);
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        listOfUsersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
+        conversationsRef = mFirebaseDatabaseReference.child("conversations");
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mUid = mFirebaseAuth.getCurrentUser().getUid();
+//        listOfUsersRef.keepSynced(true);
+        textInp_groupName = findViewById(R.id.ip_create_grp);
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        final TextInputLayout input = findViewById(R.id.ip_create_grp);
+        fab_createGroup = findViewById(R.id.fab_createGrp);
+
+        mProgressBar = findViewById(R.id.progressBar);
+        mSelectMemberRecyclerView = findViewById(R.id.recentChatsRecyclerView);
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mSelectMemberRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        Toolbar mToolbar = findViewById(R.id.createGrpToolbar);
         setSupportActionBar(mToolbar);
-        getSupportActionBar().setTitle("Select contact");
+        getSupportActionBar().setTitle("Create Group");
+//        mToolbar.setTitle("Create Group");
 //        mToolbar.setNavigationIcon(R.drawable.ic_nav_back);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
@@ -85,20 +123,15 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
             mToolbar.setElevation(10f);
         }
 
-        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        listOfUsersRef = mFirebaseDatabaseReference.child(LIST_OF_USERS);            //Firebase message branch
+        fab_createGroup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
-        mFirebaseAuth = FirebaseAuth.getInstance();
-        mUid = mFirebaseAuth.getCurrentUser().getUid();
-//        listOfUsersRef.keepSynced(true);
+                String groupName = textInp_groupName.getEditText().getText().toString();
+                AddGroupToDb(groupName);
 
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-
-        mProgressBar = findViewById(R.id.progressBar);
-        mMessageRecyclerView = findViewById(R.id.recentChatsRecyclerView);
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
+            }
+        });
 
         SnapshotParser<UserObject> parser = new SnapshotParser<UserObject>() {
             @Override
@@ -109,6 +142,8 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                 return userObject;
             }
         };
+
+//        mSelectMemberRecyclerView
 
 // Remove your name from the chat user list so that only other users are visible.
         Query query = listOfUsersRef.orderByKey();
@@ -121,7 +156,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                         .setQuery(query, parser)
                         .build();
 
-    //FIREBASE RECYLER ADAPTER
+        //FIREBASE RECYLER ADAPTER
         mFirebaseAdapter = new FirebaseRecyclerAdapter<UserObject, UserViewHolder>(options) {
             @Override
             public UserViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -139,7 +174,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
 
-          //Todo: Temporary hack. not try to find how to remove it from the the list itself.
+                //Todo: Temporary hack. not try to find how to remove it from the the list itself.
                 if(userObject.getId().equals(mUid))
                 {
                     viewHolder.viewItem.setVisibility(View.GONE);
@@ -147,7 +182,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                 else {
                     viewHolder.viewItem.setVisibility(View.VISIBLE);
                 }
-            // QuicHack ends here
+                // QuicHack ends here
                 if (userObject.getStatus() != null) {                                   //If status available, set and make it visible
                     viewHolder.StatusTextView.setText(userObject.getStatus());
                     viewHolder.StatusTextView.setVisibility(TextView.VISIBLE);
@@ -160,39 +195,42 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                     @Override
                     public void onClick(View view) {
 
-                        DatabaseReference firebaseAdapterRef = mFirebaseAdapter.getRef(position);
-
-                        firebaseAdapterRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-
-                                String receiver = dataSnapshot.getKey();
-//                                Toast.makeText(SelectUserToChat.this, "Name is "+receiver, Toast.LENGTH_SHORT).show();
-                                Intent myIntent = new Intent(SelectUserToChat.this, OneToOneChat.class);
-                                myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
-                                myIntent.putExtra("receiver",receiver);
-                                SelectUserToChat.this.startActivity(myIntent);
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                Toast.makeText(SelectUserToChat.this, "Event was cancelledd", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        Toast.makeText(CreateGroup.this, "Selected User", Toast.LENGTH_SHORT).show();
+//                        DatabaseReference firebaseAdapterRef = mFirebaseAdapter.getRef(position);
+//
+//                        firebaseAdapterRef.addListenerForSingleValueEvent(new ValueEventListener() {
+//                            @Override
+//                            public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//                                String receiver = dataSnapshot.getKey();
+////                                Toast.makeText(SelectUserToChat.this, "Name is "+receiver, Toast.LENGTH_SHORT).show();
+//                                Intent myIntent = new Intent(CreateGroup.this, OneToOneChat.class);
+//                                myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
+//                                myIntent.putExtra("receiver",receiver);
+//                                CreateGroup.this.startActivity(myIntent);
+//                            }
+//
+//                            @Override
+//                            public void onCancelled(DatabaseError databaseError) {
+//                                Toast.makeText(CreateGroup.this, "Event was cancelledd", Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
                     }
                 });
 
+
                 if (userObject.getPhotoUrl() == null) {                                 //Default profile pic
                     //Default Profile Icon
-                    viewHolder.userProfileImageView.setImageDrawable(ContextCompat.getDrawable(SelectUserToChat.this,
+                    viewHolder.userProfileImageView.setImageDrawable(ContextCompat.getDrawable(CreateGroup.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
-                    Glide.with(SelectUserToChat.this)                           // if user provides profile picture
+                    Glide.with(CreateGroup.this)                           // if user provides profile picture
                             .load(userObject.getPhotoUrl())
                             .into(viewHolder.userProfileImageView);
                 }
             }
         };
+
 
         mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
@@ -207,13 +245,65 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
                 if (lastVisiblePosition == -1 ||
                         (positionStart >= (friendlyMessageCount - 1) &&
                                 lastVisiblePosition == (positionStart - 1))) {
-                    mMessageRecyclerView.scrollToPosition(positionStart);
+                    mSelectMemberRecyclerView.scrollToPosition(positionStart);
                 }
             }
         });
 
-        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+        mSelectMemberRecyclerView.setAdapter(mFirebaseAdapter);
+    }
 
+    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+
+            MenuInflater menuInflater = actionMode.getMenuInflater();
+            menuInflater.inflate(R.menu.menu_action_mode,menu);
+
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            Log.i(TAG, "onActionItemClicked: Item was clicked");
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode actionMode) {
+
+        }
+    };
+
+    // Called by createGrp function
+    private void AddGroupToDb(final String grpName) {
+
+        conversationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(! dataSnapshot.hasChild(grpName))
+                {
+                    conversationsRef.child(grpName).setValue("No conversations Yet");
+                    Intent myIntent = new Intent(CreateGroup.this, GroupChat.class);
+//                    myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
+                    myIntent.putExtra("grpName",grpName);
+                    CreateGroup.this.startActivity(myIntent);
+                }
+                else {
+                    Toast.makeText(CreateGroup.this, "Group already exist!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override

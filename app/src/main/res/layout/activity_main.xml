@@ -6,11 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
+
     tools:context="com.google.firebase.codelab.friendlychat.MainActivity">
 
+    <include
+        android:id="@+id/chatToolbar"
+        layout="@layout/toolbar" />
+    
     <TextView
         android:id="@+id/typingStatus"
         android:layout_width="match_parent"
@@ -26,7 +28,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/typingStatus"
+        android:layout_marginTop="?attr/actionBarSize"
         android:layout_alignParentStart="true"
+        android:paddingHorizontal="24dp"
+
         android:layout_alignParentLeft="true" />
 
     <LinearLayout
@@ -41,7 +46,7 @@
             android:id="@+id/addMessageImageView"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            ads:srcCompat="@drawable/ic_add_black_24dp"/>
+            ads:srcCompat="@drawable/ic_plus_black"/>
 
         <EditText
             android:id="@+id/messageEditText"
@@ -50,13 +55,13 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"/>
 
-        <Button
+        <android.support.design.widget.FloatingActionButton
             android:id="@+id/sendButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:enabled="false"
-            android:text="@string/send"/>
+            android:src="@drawable/ic_send_arrow"
+            android:layout_margin="5dp"
+            ads:fabSize="mini"/>
 
     </LinearLayout>
 
@@ -68,12 +73,4 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"/>
 
-    <!--<ImageView-->
-    <!--android:id="@+id/imageView"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:foregroundGravity="center"-->
-    <!--android:layout_centerHorizontal="true"-->
-    <!--android:layout_centerVertical="true"-->
-    <!--android:src="@drawable/loading" />-->
 </RelativeLayout>

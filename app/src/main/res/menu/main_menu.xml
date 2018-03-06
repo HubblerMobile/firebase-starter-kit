@@ -4,7 +4,7 @@
     <item
         android:id="@+id/create_grp"
         android:title="Create Group"
-        android:icon="@drawable/ic_create_grp"
+        android:icon="@drawable/ic_plus"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/sign_out_menu"

@@ -11,7 +11,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <activity android:name=".RecentConversation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -45,15 +44,14 @@
         </service>
         [END firebase_service]
         <activity android:name=".MainActivity" />
-        <activity android:name=".SelectUserToChat"></activity>
-        <activity android:name=".OneToOneChat"
-            android:configChanges="orientation|keyboardHidden|screenSize">
-
-        </activity>
-        <activity android:name=".GroupChat"
-            android:configChanges="orientation|keyboardHidden|screenSize">
-
-        </activity>
+        <activity android:name=".SelectUserToChat" />
+        <activity
+            android:name=".OneToOneChat"
+            android:configChanges="orientation|keyboardHidden|screenSize"></activity>
+        <activity
+            android:name=".GroupChat"
+            android:configChanges="orientation|keyboardHidden|screenSize"></activity>
+        <activity android:name=".CreateGroup"></activity>
     </application>
 
 </manifest>

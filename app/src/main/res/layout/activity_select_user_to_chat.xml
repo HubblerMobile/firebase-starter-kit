@@ -4,11 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="16dp"
-    android:paddingLeft="14dp"
-    android:paddingRight="14dp"
-    android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.google.firebase.codelab.friendlychat.SelectUserToChat">
+
+    <include
+        android:id="@+id/selectUserToChatToolbar"
+        layout="@layout/toolbar" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -22,10 +22,11 @@
         android:id="@+id/recentChatsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
         android:layout_above="@+id/typingStatus"
+        android:layout_below="@+id/selectUserToChatToolbar"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true" />
-
-
 
 </RelativeLayout>

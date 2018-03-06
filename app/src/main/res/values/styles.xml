@@ -1,15 +1,19 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimary">#006ED9</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
 
-        <item name="android:colorButtonNormal">@drawable/button_selector</item>
         <item name="colorButtonNormal">@drawable/button_selector</item>
         <item name="android:buttonStyle">@style/FriendlyButtonStyle</item>
+    </style>
+
+    <style name="hubblerTheme" parent="Theme.AppCompat.Light">
+        <item name="android:textColorPrimary"> @android:color/white </item>
+        <item name="android:actionOverflowButtonStyle">@style/customOverflowButton</item>
     </style>
 
     <style name="FriendlyButtonStyle" parent="Widget.AppCompat.Button">
@@ -18,5 +22,9 @@
     </style>
     <style name="MyDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="customOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:tint">#FFF</item>
     </style>
 </resources>

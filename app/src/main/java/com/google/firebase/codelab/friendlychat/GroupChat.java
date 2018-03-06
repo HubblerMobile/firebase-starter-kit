@@ -7,10 +7,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -110,7 +112,7 @@ public class GroupChat extends AppCompatActivity
     private GoogleApiClient mGoogleApiClient;
     private static final String MESSAGE_URL = "http://friendlychat.firebase.google.com/message/";
 
-    private Button mSendButton;
+    private FloatingActionButton mSendButton;
     private RecyclerView mMessageRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
@@ -138,6 +140,8 @@ public class GroupChat extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        setContentView(R.layout.activity_main);
+
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
 //        conversationsRef.keepSynced(true);
@@ -149,25 +153,17 @@ public class GroupChat extends AppCompatActivity
         grpName = intent.getStringExtra("grpName");
         grpChatRef = conversationsRef.child(grpName);
 
-//            usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                    recieverUsername = dataSnapshot.child("grpName").getValue().toString();
-//                    recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
-//                }
-//
-//                @Override
-//                public void onCancelled(DatabaseError databaseError) {
-//
-//                }
-//            });
-
             Toast.makeText(this, grpName+" is current chat group", Toast.LENGTH_SHORT).show();
+
+
 
         CheckTypingStatus();
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        Toolbar mToolbar = findViewById(R.id.chatToolbar);
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setTitle(grpName);
+
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         getCurrentUser();
 
@@ -370,7 +366,7 @@ public class GroupChat extends AppCompatActivity
             }
         });
 
-        mSendButton = (Button) findViewById(R.id.sendButton);
+        mSendButton = findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -424,7 +420,7 @@ public class GroupChat extends AppCompatActivity
 //                recentChats.child(recieverUid).child("Group").child(grpName).setValue(lastChatMessage);
 
 //                if( !mUid.equals(senderUid)) {
-//
+//CAM
 //                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
 //                }
                 mMessageEditText.setText("");

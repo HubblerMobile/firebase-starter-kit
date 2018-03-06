@@ -3,14 +3,17 @@ package com.google.firebase.codelab.friendlychat;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -110,7 +113,7 @@ public class OneToOneChat extends AppCompatActivity
     private GoogleApiClient mGoogleApiClient;
     private static final String MESSAGE_URL = "http://friendlychat.firebase.google.com/message/";
 
-    private Button mSendButton;
+    private FloatingActionButton mSendButton;
     private RecyclerView mMessageRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
@@ -150,6 +153,7 @@ public class OneToOneChat extends AppCompatActivity
         recieverUid = intent.getStringExtra("receiver");
         grpName = intent.getStringExtra("grpName");
 
+
         if((senderUid !=null && !senderUid.isEmpty()) && (recieverUid != null && !recieverUid.isEmpty()))
         {
             usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -158,6 +162,9 @@ public class OneToOneChat extends AppCompatActivity
 
                     recieverUsername = dataSnapshot.child("name").getValue().toString();
                     recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
+                    getSupportActionBar().setTitle(recieverUsername);
+//                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                    getSupportActionBar().setIcon(R.drawable.ic_account_circle_black_36dp);
                 }
 
                 @Override
@@ -169,6 +176,8 @@ public class OneToOneChat extends AppCompatActivity
             Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
             senderChatRef = conversationsRef.child(senderUid +" chat with "+ recieverUid);
             receiverChatRef = conversationsRef.child(recieverUid+" chat with "+ senderUid);
+
+            setToolbar();
         }
         else if( grpName !=null && !grpName.isEmpty()) {
             Log.i(TAG, "onCreate: Group name available");
@@ -380,7 +389,7 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
 
-        mSendButton = (Button) findViewById(R.id.sendButton);
+        mSendButton = findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -435,12 +444,20 @@ public class OneToOneChat extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         });
+        Toolbar mToolbar = findViewById(R.id.chatToolbar);
+        setSupportActionBar(mToolbar);
 
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            mToolbar.setElevation(10f);
+        }
+    }
+
+    private void setToolbar() {
 
 
 
     }
-
     private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
 
 
@@ -543,6 +560,8 @@ public class OneToOneChat extends AppCompatActivity
     @Override
     public void onStart() {
         super.onStart();
+
+
         // Check if user is signed in.
         // TODO: Add code to check if user is signed in.
     }

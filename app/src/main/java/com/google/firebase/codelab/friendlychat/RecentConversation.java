@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -14,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -124,6 +126,17 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
             getCurrentUser();
         }
         setContentView(R.layout.activity_recent_conversation);
+
+        Toolbar mToolbar = findViewById(R.id.recentConvToolbar);
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setTitle("Recent Chats");
+        //        mToolbar.setTitle("Recent Chats");
+//        mToolbar.setNavigationIcon(R.drawable.ic_nav_back);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        {
+            mToolbar.setElevation(10f);
+        }
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         mProgressBar = findViewById(R.id.progressBar);
@@ -324,6 +337,18 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     }
 
     private void createGrp() {
+
+//        showAlertDialogForGroupName();
+        showActivityForGroupWithMultiselect();
+    }
+
+    private void showActivityForGroupWithMultiselect()
+    {
+        Intent myIntent = new Intent(RecentConversation.this, CreateGroup.class);
+        RecentConversation.this.startActivity(myIntent);
+    }
+    private void showAlertDialogForGroupName()
+    {
         Log.i("grp", "createGrp: Creating group");
         Toast.makeText(this, "Creating group", Toast.LENGTH_SHORT).show();
 
@@ -340,7 +365,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.dismiss();
                 String TextEntered = input.getText().toString();
-                AddGroupToDb(TextEntered);
+//                AddGroupToDb(TextEntered);
 
                 Log.i("Text entered", "onClick: "+TextEntered);
             }
@@ -355,31 +380,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         builder.show();
     }
 
-    // Called by createGrp function
-    private void AddGroupToDb(final String grpName) {
 
-        conversationsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(! dataSnapshot.hasChild(grpName))
-                {
-                    conversationsRef.child(grpName).setValue("No conversations Yet");
-                    Intent myIntent = new Intent(RecentConversation.this, GroupChat.class);
-//                    myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
-                    myIntent.putExtra("grpName",grpName);
-                    RecentConversation.this.startActivity(myIntent);
-                }
-                else {
-                    Toast.makeText(RecentConversation.this, "Group already exist!", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
