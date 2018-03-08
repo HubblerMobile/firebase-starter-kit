@@ -106,8 +106,15 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
                 UserObject userObject = dataSnapshot.getValue(UserObject.class);
 
+                if(userObject.getId().equals(mUid))
+                {
+                    Log.i(TAG, "parseSnapshot: "+userObject.getId()+" is ur id");
+                }
+
                 return userObject;
             }
+
+
         };
 
 // Remove your name from the chat user list so that only other users are visible.

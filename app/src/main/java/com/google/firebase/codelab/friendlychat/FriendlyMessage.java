@@ -15,6 +15,8 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
+import java.text.SimpleDateFormat;
+
 public class FriendlyMessage {
 
     private String id;
@@ -22,15 +24,19 @@ public class FriendlyMessage {
     private String name;
     private String photoUrl;
     private String imageUrl;
+    private Long timestamp;
 
     public FriendlyMessage() {
     }
 
-    public FriendlyMessage(String text, String name, String photoUrl, String imageUrl) {
+    public FriendlyMessage(String text, String name, String photoUrl, String imageUrl,long timestamp)//,Object timestamp)
+     {
         this.text = text;
         this.name = name;
         this.photoUrl = photoUrl;
         this.imageUrl = imageUrl;
+        this.timestamp = timestamp;
+        this.timestamp = timestamp;
     }
 
     public String getId() {
@@ -72,4 +78,8 @@ public class FriendlyMessage {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public long getTimestamp() { return timestamp; }
+
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 }

@@ -2,6 +2,7 @@ package com.google.firebase.codelab.friendlychat;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -16,7 +17,6 @@ import android.util.Log;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +39,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class CreateGroup extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,View.OnLongClickListener{
@@ -49,12 +52,15 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseRecyclerAdapter<UserObject, CreateGroup.UserViewHolder> mFirebaseAdapter;
+    private Map<String,Object> map_groupMembers = new HashMap<>();
 
     private String mUid;
     private TextInputLayout textInp_groupName;
     FloatingActionButton fab_createGroup;
+    ActionMode actionMode;
     Toolbar toolbar;
-    
+
+
 
     @Override
     public boolean onLongClick(View view) {
@@ -67,6 +73,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
         TextView StatusTextView;
         TextView userDisplayNameTextView;
         CircleImageView userProfileImageView;
+//        int row_index = -1;
         CreateGroup createGroup;
         View viewItem;
 
@@ -115,6 +122,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
         Toolbar mToolbar = findViewById(R.id.createGrpToolbar);
         setSupportActionBar(mToolbar);
         getSupportActionBar().setTitle("Create Group");
+//        getSupportActionBar().setSubtitle("Add Participants");
 //        mToolbar.setTitle("Create Group");
 //        mToolbar.setNavigationIcon(R.drawable.ic_nav_back);
 
@@ -128,6 +136,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
             public void onClick(View view) {
 
                 String groupName = textInp_groupName.getEditText().getText().toString();
+                setGrouUsers(map_groupMembers,groupName);
                 AddGroupToDb(groupName);
 
             }
@@ -173,7 +182,6 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
                                             UserObject userObject) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
-
                 //Todo: Temporary hack. not try to find how to remove it from the the list itself.
                 if(userObject.getId().equals(mUid))
                 {
@@ -195,26 +203,10 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
                     @Override
                     public void onClick(View view) {
 
-                        Toast.makeText(CreateGroup.this, "Selected User", Toast.LENGTH_SHORT).show();
-//                        DatabaseReference firebaseAdapterRef = mFirebaseAdapter.getRef(position);
-//
-//                        firebaseAdapterRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//                            @Override
-//                            public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//                                String receiver = dataSnapshot.getKey();
-////                                Toast.makeText(SelectUserToChat.this, "Name is "+receiver, Toast.LENGTH_SHORT).show();
-//                                Intent myIntent = new Intent(CreateGroup.this, OneToOneChat.class);
-//                                myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
-//                                myIntent.putExtra("receiver",receiver);
-//                                CreateGroup.this.startActivity(myIntent);
-//                            }
-//
-//                            @Override
-//                            public void onCancelled(DatabaseError databaseError) {
-//                                Toast.makeText(CreateGroup.this, "Event was cancelledd", Toast.LENGTH_SHORT).show();
-//                            }
-//                        });
+                         getSupportActionBar().setSubtitle("select users");
+                         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                         PrepareSelection(view,viewHolder.getAdapterPosition());
+//                        notifyDataSetChanged();
                     }
                 });
 
@@ -227,6 +219,41 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
                     Glide.with(CreateGroup.this)                           // if user provides profile picture
                             .load(userObject.getPhotoUrl())
                             .into(viewHolder.userProfileImageView);
+                }
+
+            }
+
+            public void PrepareSelection(View view, int position)
+            {
+                String viewName = getResources().getResourceEntryName(R.id.userName);
+               UserObject userObject = mFirebaseAdapter.getItem(position);
+                Log.i(TAG, "PrepareSelection: "+userObject);
+                ManageGroupUserList(view,userObject);
+                Toast.makeText(CreateGroup.this, "Selected: "+userObject.getName(), Toast.LENGTH_SHORT).show();
+            }
+
+            public void ManageGroupUserList(View view,UserObject userObject)
+            {
+                if(!map_groupMembers.containsKey(userObject.getId()))
+                {
+                    map_groupMembers.put(userObject.getId(),userObject);
+                    view.setBackgroundColor(Color.parseColor("#BDBDBD"));
+                    Toast.makeText(CreateGroup.this, "New Selection", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    map_groupMembers.remove(userObject.getId());
+                    view.setBackgroundColor(Color.parseColor("#FFFFFF"));
+                    Toast.makeText(CreateGroup.this, "Old selection", Toast.LENGTH_SHORT).show();
+                }
+                UpdateToolbarSubtitle(map_groupMembers.size());
+            }
+
+            public void UpdateToolbarSubtitle(int noOfUsers)
+            {
+                if(noOfUsers==0)
+                    getSupportActionBar().setSubtitle("Select users");
+                else {
+                    getSupportActionBar().setSubtitle(noOfUsers+ " users selected");
                 }
             }
         };
@@ -253,33 +280,71 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
         mSelectMemberRecyclerView.setAdapter(mFirebaseAdapter);
     }
 
-    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+
+
+//    private android.support.v7.view.ActionMode mActionModeCallback = new ActionMode.Callback() {
+//
+//        @Override
+//        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+//
+//            actionMode.getMenuInflater().inflate(R.menu.menu_action_mode,menu);
+//            return true;
+//        }
+//
+//        @Override
+//        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+//            return false;
+//        }
+//
+//        @Override
+//        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+//            return false;
+//        }
+//
+//        @Override
+//        public void onDestroyActionMode(ActionMode actionMode) {
+//
+//        }
+//    };
+
+    private ActionMode.Callback CreateGroupCallback = new ActionMode.Callback() {
+
         @Override
         public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
 
-            MenuInflater menuInflater = actionMode.getMenuInflater();
-            menuInflater.inflate(R.menu.menu_action_mode,menu);
+            actionMode.getMenuInflater().inflate(R.menu.menu_action_mode,menu);
+            actionMode.setTitle("DFS");
+            actionMode.setSubtitle("Participants selected");
 
             return true;
         }
 
         @Override
         public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+
+//            actionMode.setTitle("Create Group");
+//            actionMode.setSubtitle("0 of 10 selected") ;
             return false;
         }
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-            Log.i(TAG, "onActionItemClicked: Item was clicked");
+
+            Toast.makeText(CreateGroup.this, "Trigger in Contextual Menu", Toast.LENGTH_SHORT).show();
             return false;
         }
 
         @Override
         public void onDestroyActionMode(ActionMode actionMode) {
-
+            actionMode = null;
         }
     };
 
+    private void setGrouUsers(final Map<String,Object> grpUsers,String grpName)
+    {
+        Log.i(TAG, "setGrouUsers: "+grpUsers);
+        mFirebaseDatabaseReference.child("GroupUserDetails").child(grpName).setValue(grpUsers);
+    }
     // Called by createGrp function
     private void AddGroupToDb(final String grpName) {
 

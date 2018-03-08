@@ -125,6 +125,7 @@ public class GroupChat extends AppCompatActivity
         TextView messageTextView;
         ImageView messageImageView;
         TextView messengerTextView;
+        TextView timeStampView;
         CircleImageView messengerImageView;
 
 
@@ -134,6 +135,7 @@ public class GroupChat extends AppCompatActivity
             messageImageView =  itemView.findViewById(R.id.messageImageView);
             messengerTextView =  itemView.findViewById(R.id.userName);
             messengerImageView = itemView.findViewById(R.id.userProfilePic);
+            timeStampView = itemView.findViewById(R.id.timeStamp);
         }
     }
 
@@ -370,27 +372,28 @@ public class GroupChat extends AppCompatActivity
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                 FriendlyMessage friendlyMessage = new
                         FriendlyMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
-                        null /* no image */);
+                        null,getCurrentTimeStamp());//,
+                  //      timeStamp
+                 //       /* no image */);
 
-                //                 Add message to notification branch
+                // Add message to notification branch
+
                 HashMap<String,String> notification_msg = new HashMap<>();
                 notification_msg.put("uid",mFirebaseUser.getUid());
                 notification_msg.put("email",mFirebaseUser.getEmail());
                 notification_msg.put("type","Message");
                 notification_msg.put("msg",mMessageEditText.getText().toString());
 
-                grpChatRef.push().setValue(friendlyMessage);
-//                receiverChatRef.push().setValue(friendlyMessage);
-//                notificationRef.child(mUid).child(recieverUid).setValue(notification_msg);
 
+                grpChatRef.push().setValue(friendlyMessage);
 
                 final Map<String,Object> lastChatMessage = new HashMap<>();
 
-                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                 lastChatMessage.put("type", "Group");
                 lastChatMessage.put("senderUid", mUid);
                 lastChatMessage.put("timeStamp", timeStamp);
@@ -543,6 +546,18 @@ public class GroupChat extends AppCompatActivity
         }
     }
 
+    public static long getCurrentTimeStamp(){
+//            Date date = new Date();
+//            java.sql.Timestamp ts = new java.sql.Timestamp(date.getTime());
+//            String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+        long formattedDate = System.currentTimeMillis();
+        Log.i(TAG, "getCurrentTimeStamp: "+System.currentTimeMillis());
+        return formattedDate;
+
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -589,9 +604,9 @@ public class GroupChat extends AppCompatActivity
                 if (data != null) {
                     final Uri uri = data.getData();
                     Log.d(TAG, "Uri: " + uri.toString());
-
+                    Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                     FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
-                            LOADING_IMAGE_URL);
+                            LOADING_IMAGE_URL,getCurrentTimeStamp());//,timeStamp);
                     mFirebaseDatabaseReference.child(CONVERSATIONS).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
@@ -623,10 +638,11 @@ public class GroupChat extends AppCompatActivity
                     @Override
                     public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                         if (task.isSuccessful()) {
+                            Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                             FriendlyMessage friendlyMessage =
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
-                                                    .toString());
+                                                    .toString(),getCurrentTimeStamp());//,timeStamp);
                             mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
                                     .setValue(friendlyMessage);
                         } else {

@@ -24,7 +24,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -79,7 +78,7 @@ public class OneToOneChat extends AppCompatActivity
     private DatabaseReference usersRef;
 
 
-    private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder> mFirebaseAdapter;
     private int timeDelayForCheck = 1;
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
@@ -122,10 +121,12 @@ public class OneToOneChat extends AppCompatActivity
     private TextView typingStatus;
     boolean isDelayCheckRunning = false;
 
+
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         ImageView messageImageView;
         TextView messengerTextView;
+        TextView timeStampView;
         CircleImageView messengerImageView;
 
 
@@ -135,9 +136,27 @@ public class OneToOneChat extends AppCompatActivity
             messageImageView =  itemView.findViewById(R.id.messageImageView);
             messengerTextView =  itemView.findViewById(R.id.userName);
             messengerImageView = itemView.findViewById(R.id.userProfilePic);
+            timeStampView = itemView.findViewById(R.id.timeStamp);
         }
     }
 
+    public static class RecieverMsgHolder extends RecyclerView.ViewHolder {
+        TextView messageTextView;
+        ImageView messageImageView;
+        TextView messengerTextView;
+        TextView timeStampView;
+        CircleImageView messengerImageView;
+
+
+        public RecieverMsgHolder(View v) {
+            super(v);
+            messageTextView =  itemView.findViewById(R.id.text);
+            messageImageView =  itemView.findViewById(R.id.messageImageView);
+            messengerTextView =  itemView.findViewById(R.id.userName);
+            messengerImageView = itemView.findViewById(R.id.userProfilePic);
+            timeStampView = itemView.findViewById(R.id.timeStamp);
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -292,37 +311,125 @@ public class OneToOneChat extends AppCompatActivity
                         .build();
 
 
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
+        CustomFirebaseChatAdapter customFirebaseChatAdapter = new CustomFirebaseChatAdapter(options);
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder>(options) {
+
             @Override
-            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+            public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+
+                switch (viewType)
+                {
+                    case R.layout.user_list_item :
+                        View userListItem = LayoutInflater.from(viewGroup.getContext())
+                                            .inflate(R.layout.user_list_item,viewGroup,false);
+                        Log.i(TAG, "onCreateViewHolder: View Type is user list item");
+                        return new MessageViewHolder(userListItem);
+                    case R.layout.user_list_item_received:
+                        View userListItemReceived = LayoutInflater.from(viewGroup.getContext())
+                                .inflate(R.layout.user_list_item_received,viewGroup,false);
+                        Log.i(TAG, "onCreateViewHolder: View type is recieved item");
+                        return new RecieverMsgHolder(userListItemReceived);
+                        default:
+                            Log.i(TAG, "onCreateViewHolder: View type is unknown");
+                }
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
+                Log.i(TAG, "onCreateViewHolder: ViewType "+viewType);
                 return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
             }
 
+            @Override
+            public int getItemViewType(int position) {
+
+                FriendlyMessage friendlyMessage = getItem(position);
+                Log.i(TAG, "getItemViewType: "+friendlyMessage);
+
+                if(friendlyMessage.getName().equals(mUsername))
+                    return R.layout.user_list_item;
+                else
+                    return R.layout.user_list_item_received;
+//                return super.getItemViewType(position);
+            }
 
             @Override
-            protected void onBindViewHolder(final MessageViewHolder viewHolder,
+            protected void onBindViewHolder(final RecyclerView.ViewHolder viewHolder,
                                             int position,
                                             FriendlyMessage friendlyMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                if (friendlyMessage.getText() != null) {
-                    viewHolder.messageTextView.setText(friendlyMessage.getText());
-                    viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
-                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
-                } else {
-//                  Handle Image view.
+
+            if(friendlyMessage.getText()!=null)
+            {
+                if(viewHolder. getItemViewType() == R.layout.user_list_item)
+                {
+                    Log.i(TAG, "onBindViewHolder: View type is sender msg");
+
+                    MessageViewHolder messageViewHolder = (MessageViewHolder)viewHolder;
+
+                    messageViewHolder.messageTextView.setText(friendlyMessage.getText());
+                    messageViewHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                    messageViewHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
+//                    messageViewHolder.messageImageView.setVisibility(ImageView.GONE);
+
+//                    messageViewHolder.messengerTextView.setText(friendlyMessage.getName());
+
+                    if (friendlyMessage.getPhotoUrl() == null) {
+                        messageViewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+                                R.drawable.ic_account_circle_black_36dp));
+                    } else {
+//                        Glide.with(OneToOneChat.this)
+//                                .load(friendlyMessage.getPhotoUrl())
+//                                .into(messageViewHolder.messageImageView);
+                    }
                 }
+                else
+                if(getItemViewType(position) == R.layout.user_list_item_received)
+                {
+                    Log.i(TAG, "onBindViewHolder: View type is reciever msg");
+
+                    RecieverMsgHolder recieverMsgHolder = (RecieverMsgHolder)viewHolder;
+
+                    recieverMsgHolder.messageTextView.setText(friendlyMessage.getText());
+                    recieverMsgHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                    recieverMsgHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
+//                    recieverMsgHolder.messageImageView.setVisibility(ImageView.GONE);
+
+//                    recieverMsgHolder.messengerTextView.setText(friendlyMessage.getName());
+
+                    if (friendlyMessage.getPhotoUrl() == null) {
+                        recieverMsgHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+                                R.drawable.ic_account_circle_black_36dp));
+                    } else {
+                        Glide.with(OneToOneChat.this)
+                                .load(friendlyMessage.getPhotoUrl())
+                                .into(recieverMsgHolder.messengerImageView);
+                    }
+                }
+            }
+            else
+            {
+                Log.i(TAG, "onBindViewHolder: HANDLE IMAGE");
+            }
+
+//                if(friendlyMessage.getName())
+//                if (friendlyMessage.getText() != null) {
+//
+//
+//                    viewHolder.messageTextView.setText(friendlyMessage.getText());
+//                    viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
+//                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
+//                } else {
+////                  Handle Image view.
+//                }
 
 
-                viewHolder.messengerTextView.setText(friendlyMessage.getName());
-                if (friendlyMessage.getPhotoUrl() == null) {
-                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
-                            R.drawable.ic_account_circle_black_36dp));
-                } else {
-                    Glide.with(OneToOneChat.this)
-                            .load(friendlyMessage.getPhotoUrl())
-                            .into(viewHolder.messengerImageView);
-                }
+//                viewHolder.messengerTextView.setText(friendlyMessage.getName());
+//                if (friendlyMessage.getPhotoUrl() == null) {
+//                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+//                            R.drawable.ic_account_circle_black_36dp));
+//                } else {
+//                    Glide.with(OneToOneChat.this)
+//                            .load(friendlyMessage.getPhotoUrl())
+//                            .into(viewHolder.messengerImageView);
+//                }
             }
         };
 
@@ -388,16 +495,43 @@ public class OneToOneChat extends AppCompatActivity
             public void afterTextChanged(Editable editable) {
             }
         });
-
         mSendButton = findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+//                String timeStampKey = mFirebaseDatabaseReference.child("Timestamps").push().getKey();
+//                mFirebaseDatabaseReference.child("Timestamps").child(timeStampKey).setValue(timeStamp);
+
+                long timeStampLocal = getCurrentTimeStamp();
+                Log.i(TAG, "onClick: "+timeStampLocal+" is the timestamp in system");
+//                java.util.Date time=new java.util.Date(timestamp);
+//       SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
+//
+//                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
+//                String currentDateTime = dateFormat.format(new Date());
+
+//                mFirebaseDatabaseReference.child("Timestamps").child(timeStampKey).addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(DatabaseError databaseError) {
+//
+//                    }
+//                });
+
+
+//                timeStampKey.child("Timestamps").child(timeStampKey)
                 FriendlyMessage friendlyMessage = new
                         FriendlyMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
-                        null /* no image */);
+                        null,
+                        getCurrentTimeStamp());
 
                 //                 Add message to notification branch
                 HashMap<String,String> notification_msg = new HashMap<>();
@@ -413,9 +547,9 @@ public class OneToOneChat extends AppCompatActivity
 
                 Map<String,Object> lastChatMessage = new HashMap<>();
 
-                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+//                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                       lastChatMessage.put("senderUid", mUid);
-                      lastChatMessage.put("timeStamp", timeStamp);
+                      lastChatMessage.put("timeStamp", timeStampLocal);
                       lastChatMessage.put("name", recieverUsername);
                       lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
                       lastChatMessage.put("photoUrl", recieverPhotoUrl);
@@ -425,10 +559,6 @@ public class OneToOneChat extends AppCompatActivity
                 lastChatMessage.put("photoUrl",mPhotoUrl);
                 recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
 
-//                if( !mUid.equals(senderUid)) {
-//
-//                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
-//                }
                mMessageEditText.setText("");
             }
         });
@@ -458,6 +588,20 @@ public class OneToOneChat extends AppCompatActivity
 
 
     }
+
+    public static long getCurrentTimeStamp(){
+//            Date date = new Date();
+//            java.sql.Timestamp ts = new java.sql.Timestamp(date.getTime());
+//            String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+            long formattedDate = System.currentTimeMillis();
+            Log.i(TAG, "getCurrentTimeStamp: "+System.currentTimeMillis());
+            return formattedDate;
+
+    }
+
+
     private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
 
 
@@ -490,10 +634,10 @@ public class OneToOneChat extends AppCompatActivity
         }
     }
 
-    public String getDataTimeStamp(long timestamp){
+    public String getDataTimetoStamp(long timestamp){
         java.util.Date time=new java.util.Date(timestamp);
 //        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
-        SimpleDateFormat pre = new SimpleDateFormat("HH:mm:ss");
+        SimpleDateFormat pre = new SimpleDateFormat("hh:mm a");
 
         //Hear Define your returning date formate
         return pre.format(time);
@@ -605,9 +749,9 @@ public class OneToOneChat extends AppCompatActivity
                 if (data != null) {
                     final Uri uri = data.getData();
                     Log.d(TAG, "Uri: " + uri.toString());
-
+                    Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                     FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
-                            LOADING_IMAGE_URL);
+                            LOADING_IMAGE_URL,getCurrentTimeStamp());//,timeStamp);
                     mFirebaseDatabaseReference.child(CONVERSATIONS).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
@@ -634,6 +778,7 @@ public class OneToOneChat extends AppCompatActivity
     }
 
     private void putImageInStorage(StorageReference storageReference, Uri uri, final String key) {
+
         storageReference.putFile(uri).addOnCompleteListener(OneToOneChat.this,
                 new OnCompleteListener<UploadTask.TaskSnapshot>() {
                     @Override
@@ -642,7 +787,7 @@ public class OneToOneChat extends AppCompatActivity
                             FriendlyMessage friendlyMessage =
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
-                                                    .toString());
+                                                    .toString(),getCurrentTimeStamp());//,timeStamp);
                             mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
                                     .setValue(friendlyMessage);
                         } else {

@@ -57,10 +57,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
         String notification_title = remoteMessage.getNotification().getTitle();
         String notification_msg = remoteMessage.getNotification().getBody();
         String notification_icon = remoteMessage.getNotification().getIcon();
-        Bitmap myIconBitMap = getBitmapFromURL(notification_icon);
+//        Bitmap myIconBitMap = getBitmapFromURL(notification_icon);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this,"notific id");
         notificationBuilder
-                .setLargeIcon(myIconBitMap)
+//                .setLargeIcon(myIconBitMap)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(notification_title)
                 .setContentText(notification_msg)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
