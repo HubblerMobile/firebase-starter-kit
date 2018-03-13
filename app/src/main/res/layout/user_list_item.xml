@@ -34,26 +34,26 @@
         android:gravity="end"
         android:maxWidth="240dp"
         android:padding="8dp"
-        android:text="ok"
+        android:text="hubblering...."
         android:textAlignment="textEnd"
         android:textColor="#ffffff"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
-    <TextView
-        android:id="@+id/seen"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="8dp"
-        android:background="@drawable/rounded_rectangle_blue"
-        android:gravity="end"
-        android:maxWidth="240dp"
-        android:padding="8dp"
-        android:text="ok"
-        android:textAlignment="textEnd"
-        android:textColor="#ffffff"
-        app:layout_constraintBottom_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+    <!--<TextView-->
+        <!--android:id="@+id/seen"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginRight="8dp"-->
+        <!--android:background="@drawable/rounded_rectangle_blue"-->
+        <!--android:gravity="end"-->
+        <!--android:maxWidth="240dp"-->
+        <!--android:padding="8dp"-->
+        <!--android:text="ok"-->
+        <!--android:textAlignment="textEnd"-->
+        <!--android:textColor="#ffffff"-->
+        <!--app:layout_constraintBottom_toTopOf="parent"-->
+        <!--app:layout_constraintRight_toRightOf="parent" />-->
 
     <ImageView
         android:id="@+id/messageImageView"
@@ -78,24 +78,29 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/timeStamp"
         app:layout_constraintLeft_toRightOf="@+id/timeStamp">
-        <!--<ImageView-->
-        <!--android:layout_width="10dp"-->
-        <!--android:layout_height="10dp"-->
-        <!--android:layout_marginLeft="1dp"-->
-        <!--android:src="@drawable/ic_single_check"-->
-        <!--android:layout_marginBottom="1dp"/>-->
-        <!--<ImageView-->
-            <!--android:layout_width="12dp"-->
-            <!--android:layout_height="12dp"-->
-            <!--android:layout_marginBottom="1dp"-->
-            <!--android:layout_marginLeft="1dp"-->
-            <!--android:src="@drawable/ic_double_check_grey" />-->
         <ImageView
+            android:id="@+id/singleCheck"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginLeft="2dp"
+            android:src="@drawable/ic_single_check"
+            android:layout_marginBottom="1dp"/>
+        <ImageView
+            android:id="@+id/doubleCheckGrey"
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:layout_marginBottom="1dp"
             android:layout_marginLeft="1dp"
-            android:src="@drawable/ic_double_check_blue" />
+            android:src="@drawable/ic_double_check_grey"
+            android:visibility="gone"/>
+        <ImageView
+            android:id="@+id/doubleCheckBlue"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginBottom="1dp"
+            android:layout_marginLeft="1dp"
+            android:src="@drawable/ic_double_check_blue"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

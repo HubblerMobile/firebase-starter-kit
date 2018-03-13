@@ -43,14 +43,27 @@
             </intent-filter>
         </service>
         [END firebase_service]
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:theme="@style/AppTheme"/>
         <activity android:name=".SelectUserToChat" />
         <activity
             android:name=".OneToOneChat"
-            android:configChanges="orientation|keyboardHidden|screenSize"></activity>
+            android:theme="@style/AppTheme"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+                <intent-filter>
+                    <action android:name="com.google.firebase.codelab.open_individualChat"></action>
+                    <category android:name="android.intent.category.DEFAULT" />
+                </intent-filter>
+        </activity>
         <activity
             android:name=".GroupChat"
-            android:configChanges="orientation|keyboardHidden|screenSize"></activity>
+            android:theme="@style/AppTheme"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+            <intent-filter>
+                <action android:name="com.google.firebase.codelab.open_groupChat"></action>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".CreateGroup"></activity>
     </application>
 

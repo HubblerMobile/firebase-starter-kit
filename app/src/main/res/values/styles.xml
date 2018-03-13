@@ -11,13 +11,14 @@
         <item name="android:buttonStyle">@style/FriendlyButtonStyle</item>
     </style>
 
-    <style name="hubblerTheme" parent="Theme.AppCompat.Light">
-        <item name="android:textColorPrimary"> @android:color/white </item>
-        <item name="colorControlNormal">@android:color/white</item>
-        <item name="android:actionModeBackground">@android:color/black </item>
-        <item name="actionModeBackground">@android:color/white</item>
-        <item name="android:actionOverflowButtonStyle">@style/customOverflowButton</item>
-    </style>
+    <!--<style name="hubblerTheme" parent="Theme.AppCompat.Light.DarkActionBar">-->
+        <!--<item name="android:textColorPrimary"> @android:color/white </item>-->
+        <!--<item name="colorControlNormal">@android:color/white</item>-->
+        <!--<item name="android:actionModeBackground">@android:color/black </item>-->
+        <!--<item name="actionModeBackground">@android:color/white</item>-->
+        <!--<item name="actionMenuTextColor">@android:color/black</item>-->
+        <!--<item name="android:actionOverflowButtonStyle">@style/customOverflowButton</item>-->
+    <!--</style>-->
 
     <style name="FriendlyButtonStyle" parent="Widget.AppCompat.Button">
         <item name="android:textColor">@color/colorTitle</item>
@@ -29,5 +30,9 @@
 
     <style name="customOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
         <item name="android:tint">#FFF</item>
+    </style>
+
+    <style name="ToolBarStyle" parent="Theme.AppCompat">
+        <item name="actionMenuTextColor">@android:color/white</item>
     </style>
 </resources>

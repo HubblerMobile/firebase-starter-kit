@@ -135,7 +135,7 @@ public class SelectUserToChat extends AppCompatActivity implements GoogleApiClie
 
                 Log.i(TAG, "onCreateViewHolder: "+viewType);
                 LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-                return new UserViewHolder(inflater.inflate(R.layout.user_list_item, parent, false));
+                return new UserViewHolder(inflater.inflate(R.layout.select_user_item, parent, false));
             }
 
 

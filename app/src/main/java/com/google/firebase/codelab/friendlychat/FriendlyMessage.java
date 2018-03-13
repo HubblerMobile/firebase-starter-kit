@@ -24,19 +24,21 @@ public class FriendlyMessage {
     private String name;
     private String photoUrl;
     private String imageUrl;
+    private String msgStatus;
     private Long timestamp;
+
 
     public FriendlyMessage() {
     }
 
-    public FriendlyMessage(String text, String name, String photoUrl, String imageUrl,long timestamp)//,Object timestamp)
+    public FriendlyMessage(String text, String name, String photoUrl, String imageUrl,long timestamp,String msgStatus)//,Object timestamp)
      {
         this.text = text;
         this.name = name;
         this.photoUrl = photoUrl;
         this.imageUrl = imageUrl;
         this.timestamp = timestamp;
-        this.timestamp = timestamp;
+        this.msgStatus = msgStatus;
     }
 
     public String getId() {
@@ -82,4 +84,8 @@ public class FriendlyMessage {
     public long getTimestamp() { return timestamp; }
 
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public String getMsgStatus() { return msgStatus; }
+
+    public void setMsgStatus(String msgStatus) { this.msgStatus = msgStatus; }
 }

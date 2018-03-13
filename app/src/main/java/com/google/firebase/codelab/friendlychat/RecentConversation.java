@@ -98,17 +98,22 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     private RecyclerView mRecentChatsRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
+    private TextView txt_NoRecentConv;
 
     FloatingActionButton fab_selectChatUser;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_recent_conversation);
+
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
         recentChatsRef = mFirebaseDatabaseReference.child(RECENT_CHATS);
         conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
+
+        txt_NoRecentConv = findViewById(R.id.txtv_noRecentConv);
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
@@ -125,7 +130,6 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         else {
             getCurrentUser();
         }
-        setContentView(R.layout.activity_recent_conversation);
 
         Toolbar mToolbar = findViewById(R.id.recentConvToolbar);
         setSupportActionBar(mToolbar);
@@ -142,6 +146,8 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         mProgressBar = findViewById(R.id.progressBar);
         mRecentChatsRecyclerView = findViewById(R.id.recentChats);
         mLinearLayoutManager = new LinearLayoutManager(this);
+        mLinearLayoutManager.setReverseLayout(true);
+        mLinearLayoutManager.setStackFromEnd(true);
         mRecentChatsRecyclerView.setLayoutManager(mLinearLayoutManager);
 
         fab_selectChatUser = findViewById(R.id.selectChatUser);
@@ -162,9 +168,11 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
             @Override
             public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
 
-                FriendlyMessage msgObj = new FriendlyMessage();
+                FriendlyMessage msgObj;// = new FriendlyMessage();
                 FriendlyMessage grpObj = new FriendlyMessage();
                 boolean grpObjFound = false;
+
+//                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
                 if(dataSnapshot.getKey().toString().equals("Group"))
                 {
@@ -186,9 +194,25 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         };
 
 //        Query keyQuery = mFirebaseDatabaseReference.child("conversations").child("iUlC1L0fyYa5JsoUtYz8bGvMtFk2 chat with ZT0zxHibN2hdT2yRAQ48pIzW23i1").limitToLast(1);      //Todo: try to find how to order by timestamp.
-        Query query = mFirebaseDatabaseReference.child("recent_chats").child(sender);
+        Query query = mFirebaseDatabaseReference.child("recent_chats").child(sender).orderByChild("timeStamp");
         DatabaseReference convesation_root = mFirebaseDatabaseReference.child("convesations");
 
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if(!dataSnapshot.hasChildren())
+                {
+                    mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                    txt_NoRecentConv.setVisibility(View.VISIBLE);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
 
         FirebaseRecyclerOptions<FriendlyMessage> options =
                 new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
@@ -203,7 +227,6 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 LayoutInflater inflater = LayoutInflater.from(parent.getContext());
                 return new RecentChatViewHolder(inflater.inflate(R.layout.recent_chat_list_item, parent, false));
             }
-
 
             @Override
             protected void onBindViewHolder(final RecentChatViewHolder viewHolder,
@@ -347,40 +370,6 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         Intent myIntent = new Intent(RecentConversation.this, CreateGroup.class);
         RecentConversation.this.startActivity(myIntent);
     }
-    private void showAlertDialogForGroupName()
-    {
-        Log.i("grp", "createGrp: Creating group");
-        Toast.makeText(this, "Creating group", Toast.LENGTH_SHORT).show();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(RecentConversation.this,R.style.MyDialogTheme);
-        builder.setTitle("Create Group");
-
-//        final TextInputLayout =
-        View viewInflated = LayoutInflater.from(RecentConversation.this).inflate(R.layout.create_grp_popup, (ViewGroup) findViewById(android.R.id.content), false);
-        final EditText input = viewInflated.findViewById(R.id.create_grp_textField);
-        builder.setView(viewInflated);
-
-        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
-                String TextEntered = input.getText().toString();
-//                AddGroupToDb(TextEntered);
-
-                Log.i("Text entered", "onClick: "+TextEntered);
-            }
-        });
-        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-
-                dialogInterface.cancel();
-            }
-        });
-        builder.show();
-    }
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

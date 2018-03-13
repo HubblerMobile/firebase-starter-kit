@@ -7,9 +7,14 @@
     android:layout_height="match_parent"
     tools:context="com.google.firebase.codelab.friendlychat.RecentConversation">
 
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
     <include
             android:id="@+id/recentConvToolbar"
             layout="@layout/toolbar" />
+    </android.support.design.widget.AppBarLayout>
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyle"
@@ -18,12 +23,23 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"/>
 
+    <TextView
+        android:id="@+id/txtv_noRecentConv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:text="No Recent Conversations\nSelect a user to chat"
+        android:visibility="gone"
+        android:textAlignment="center"
+        android:textSize="17sp"/>
+
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="14dp"
         android:paddingRight="14dp"
-        android:layout_below="@+id/recentConvToolbar">
+        android:layout_below="@+id/appBar">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recentChats"

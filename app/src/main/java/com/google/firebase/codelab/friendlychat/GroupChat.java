@@ -78,7 +78,7 @@ public class GroupChat extends AppCompatActivity
     private DatabaseReference usersRef;
 
 
-    private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder> mFirebaseAdapter;
     private int timeDelayForCheck = 1;
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
@@ -128,12 +128,35 @@ public class GroupChat extends AppCompatActivity
         TextView timeStampView;
         CircleImageView messengerImageView;
 
+        ImageView singleCheck;
+        ImageView doubleCheckBlue;
+
 
         public MessageViewHolder(View v) {
             super(v);
             messageTextView =  itemView.findViewById(R.id.text);
             messageImageView =  itemView.findViewById(R.id.messageImageView);
             messengerTextView =  itemView.findViewById(R.id.userName);
+            messengerImageView = itemView.findViewById(R.id.userProfilePic);
+            timeStampView = itemView.findViewById(R.id.timeStamp);
+
+            singleCheck = itemView.findViewById(R.id.singleCheck);
+            doubleCheckBlue = itemView.findViewById(R.id.doubleCheckBlue);
+        }
+    }
+
+    public static class RecieverMsgHolder extends RecyclerView.ViewHolder {
+        TextView messageTextView;
+        ImageView messageImageView;
+        //        TextView messengerTextView;
+        TextView timeStampView;
+        CircleImageView messengerImageView;
+
+        public RecieverMsgHolder(View v) {
+            super(v);
+            messageTextView =  itemView.findViewById(R.id.text);
+            messageImageView =  itemView.findViewById(R.id.messageImageView);
+//            messengerTextView =  itemView.findViewById(R.id.userName);
             messengerImageView = itemView.findViewById(R.id.userProfilePic);
             timeStampView = itemView.findViewById(R.id.timeStamp);
         }
@@ -163,8 +186,9 @@ public class GroupChat extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         Toolbar mToolbar = findViewById(R.id.chatToolbar);
+        mToolbar.setTitle(grpName);
+//        mToolbar.setTitleTextColor();
         setSupportActionBar(mToolbar);
-        getSupportActionBar().setTitle(grpName);
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         getCurrentUser();
@@ -272,36 +296,120 @@ public class GroupChat extends AppCompatActivity
                         .build();
 
 
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder>(options) {
             @Override
-            public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+            public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+
+                switch (viewType)
+                {
+                    case R.layout.user_list_item :
+                        View userListItem = LayoutInflater.from(viewGroup.getContext())
+                                .inflate(R.layout.user_list_item,viewGroup,false);
+                        Log.i(TAG, "onCreateViewHolder: View Type is user list item");
+                        return new MessageViewHolder(userListItem);
+                    case R.layout.user_list_item_received:
+                        View userListItemReceived = LayoutInflater.from(viewGroup.getContext())
+                                .inflate(R.layout.user_list_item_received,viewGroup,false);
+                        Log.i(TAG, "onCreateViewHolder: View type is recieved item");
+                        return new RecieverMsgHolder(userListItemReceived);
+                    default:
+                        Log.i(TAG, "onCreateViewHolder: View type is unknown");
+                }
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-                return new MessageViewHolder(inflater.inflate(R.layout.item_message, viewGroup, false));
+                return new MessageViewHolder(inflater.inflate(R.layout.user_list_item, viewGroup, false));
+            }
+
+
+            @Override
+            public int getItemViewType(int position) {
+
+                FriendlyMessage friendlyMessage = getItem(position);
+                Log.i(TAG, "getItemViewType: "+friendlyMessage);
+
+                if(friendlyMessage.getName().equals(mUsername))
+                    return R.layout.user_list_item;
+                else
+                    return R.layout.user_list_item_received;
             }
 
             @Override
-            protected void onBindViewHolder(final MessageViewHolder viewHolder,
+            protected void onBindViewHolder(final RecyclerView.ViewHolder viewHolder,
                                             int position,
                                             FriendlyMessage friendlyMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+
+
                 if (friendlyMessage.getText() != null) {
-                    viewHolder.messageTextView.setText(friendlyMessage.getText());
-                    viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
-                    viewHolder.messageImageView.setVisibility(ImageView.GONE);
+
+                    if(viewHolder. getItemViewType() == R.layout.user_list_item)
+                    {
+                        Log.i(TAG, "onBindViewHolder: View type is sender msg");
+
+                        MessageViewHolder messageViewHolder = (MessageViewHolder)viewHolder;
+
+                        messageViewHolder.messageTextView.setText(friendlyMessage.getText());
+                        messageViewHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                        messageViewHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
+
+                        if(friendlyMessage.getMsgStatus().equals("seen"))
+                        {
+                            messageViewHolder.singleCheck.setVisibility(View.GONE);
+                            messageViewHolder.doubleCheckBlue.setVisibility(View.VISIBLE);
+                        }
+                        else
+                        {
+                            messageViewHolder.singleCheck.setVisibility(View.VISIBLE);
+                            messageViewHolder.doubleCheckBlue.setVisibility(View.GONE);
+                        }
+                        messageViewHolder.messageImageView.setVisibility(ImageView.GONE);
+
+
+                        if (friendlyMessage.getPhotoUrl() == null) {
+                            messageViewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
+                                    R.drawable.ic_account_circle_black_36dp));
+                        } else {
+//                        Glide.with(OneToOneChat.this)
+//                                .load(friendlyMessage.getPhotoUrl())
+//                                .into(messageViewHolder.messageImageView);
+                        }
+                    }
+                    else
+                    if(getItemViewType(position) == R.layout.user_list_item_received)
+                    {
+                        Log.i(TAG, "onBindViewHolder: View type is reciever msg");
+
+                        RecieverMsgHolder recieverMsgHolder = (RecieverMsgHolder)viewHolder;
+
+                        recieverMsgHolder.messageTextView.setText(friendlyMessage.getText());
+                        recieverMsgHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                        recieverMsgHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
+//                    recieverMsgHolder.messageImageView.setVisibility(ImageView.GONE);
+
+//                    recieverMsgHolder.messengerTextView.setText(friendlyMessage.getName());
+
+                        if (friendlyMessage.getPhotoUrl() == null) {
+                            recieverMsgHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
+                                    R.drawable.ic_account_circle_black_36dp));
+                        } else {
+                            Glide.with(GroupChat.this)
+                                    .load(friendlyMessage.getPhotoUrl())
+                                    .into(recieverMsgHolder.messengerImageView);
+                        }
+                    }
                 } else {
 //                  Handle Image view.
                 }
 
 
-                viewHolder.messengerTextView.setText(friendlyMessage.getName());
-                if (friendlyMessage.getPhotoUrl() == null) {
-                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
-                            R.drawable.ic_account_circle_black_36dp));
-                } else {
-                    Glide.with(GroupChat.this)
-                            .load(friendlyMessage.getPhotoUrl())
-                            .into(viewHolder.messengerImageView);
-                }
+//                viewHolder.messengerTextView.setText(friendlyMessage.getName());
+//                if (friendlyMessage.getPhotoUrl() == null) {
+//                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
+//                            R.drawable.ic_account_circle_black_36dp));
+//                } else {
+//                    Glide.with(GroupChat.this)
+//                            .load(friendlyMessage.getPhotoUrl())
+//                            .into(viewHolder.messengerImageView);
+//                }
             }
         };
 
@@ -377,13 +485,13 @@ public class GroupChat extends AppCompatActivity
                         FriendlyMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
-                        null,getCurrentTimeStamp());//,
+                        null,getCurrentTimeStamp(),"sent");//,
                   //      timeStamp
                  //       /* no image */);
 
                 // Add message to notification branch
 
-                HashMap<String,String> notification_msg = new HashMap<>();
+                final HashMap<String,String> notification_msg = new HashMap<>();
                 notification_msg.put("uid",mFirebaseUser.getUid());
                 notification_msg.put("email",mFirebaseUser.getEmail());
                 notification_msg.put("type","Message");
@@ -398,18 +506,23 @@ public class GroupChat extends AppCompatActivity
                 lastChatMessage.put("senderUid", mUid);
                 lastChatMessage.put("timeStamp", timeStamp);
                 lastChatMessage.put("name", grpName);
-                lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
+                lastChatMessage.put("text",mMessageEditText.getText().toString());
                 lastChatMessage.put("photoUrl", "https://image.freepik.com/free-icon/group-profile-users_318-41953.jpg");
 
                 recentChats.child(mUid).child(grpName).setValue(lastChatMessage);
 
-                recentChats.addListenerForSingleValueEvent(new ValueEventListener() {
+
+
+
+    // Add group message to recent chats of group members
+                mFirebaseDatabaseReference.child("GroupUserDetails").child(grpName).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
-                        for(DataSnapshot userSnap:dataSnapshot.getChildren())
+                        for(DataSnapshot groupUser:dataSnapshot.getChildren())
                         {
-                            userSnap.child(grpName).getRef().setValue(lastChatMessage);
+                           recentChats.child(groupUser.getKey()).child(grpName).setValue(lastChatMessage);
+                           notificationRef.child(mUid).child("groupMsg").child(grpName).child(groupUser.getKey()).setValue(notification_msg);
                         }
                     }
 
@@ -418,14 +531,9 @@ public class GroupChat extends AppCompatActivity
 
                     }
                 });
-                lastChatMessage.put("name",grpName);
-//                lastChatMessage.put("photoUrl",);
-//                recentChats.child(recieverUid).child("Group").child(grpName).setValue(lastChatMessage);
 
-//                if( !mUid.equals(senderUid)) {
-//CAM
-//                    recentChats.child(mUid).child(recieverUid).setValue(lastChatMessage);
-//                }
+                lastChatMessage.put("name",grpName);
+
                 mMessageEditText.setText("");
             }
         });
@@ -447,10 +555,6 @@ public class GroupChat extends AppCompatActivity
 
     }
 
-    private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
-
-
-    }
     private void userIsTyping(boolean isUserTyping) {
 
         if(isUserTyping) {
@@ -483,6 +587,15 @@ public class GroupChat extends AppCompatActivity
         java.util.Date time=new java.util.Date(timestamp);
 //        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
         SimpleDateFormat pre = new SimpleDateFormat("HH:mm:ss");
+
+        //Hear Define your returning date formate
+        return pre.format(time);
+    }
+
+    public String getDataTimetoStamp(long timestamp){
+        java.util.Date time=new java.util.Date(timestamp);
+//        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
+        SimpleDateFormat pre = new SimpleDateFormat("hh:mm a");
 
         //Hear Define your returning date formate
         return pre.format(time);
@@ -606,7 +719,7 @@ public class GroupChat extends AppCompatActivity
                     Log.d(TAG, "Uri: " + uri.toString());
                     Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                     FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
-                            LOADING_IMAGE_URL,getCurrentTimeStamp());//,timeStamp);
+                            LOADING_IMAGE_URL,getCurrentTimeStamp(),"sent");//,timeStamp);
                     mFirebaseDatabaseReference.child(CONVERSATIONS).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
@@ -642,7 +755,7 @@ public class GroupChat extends AppCompatActivity
                             FriendlyMessage friendlyMessage =
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
-                                                    .toString(),getCurrentTimeStamp());//,timeStamp);
+                                                    .toString(),getCurrentTimeStamp(),"sent");//,timeStamp);
                             mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
                                     .setValue(friendlyMessage);
                         } else {

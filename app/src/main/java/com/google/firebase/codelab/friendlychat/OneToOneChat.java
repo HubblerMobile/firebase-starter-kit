@@ -129,6 +129,9 @@ public class OneToOneChat extends AppCompatActivity
         TextView timeStampView;
         CircleImageView messengerImageView;
 
+        ImageView singleCheck;
+        ImageView doubleCheckBlue;
+
 
         public MessageViewHolder(View v) {
             super(v);
@@ -137,22 +140,24 @@ public class OneToOneChat extends AppCompatActivity
             messengerTextView =  itemView.findViewById(R.id.userName);
             messengerImageView = itemView.findViewById(R.id.userProfilePic);
             timeStampView = itemView.findViewById(R.id.timeStamp);
+
+            singleCheck = itemView.findViewById(R.id.singleCheck);
+            doubleCheckBlue = itemView.findViewById(R.id.doubleCheckBlue);
         }
     }
 
     public static class RecieverMsgHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         ImageView messageImageView;
-        TextView messengerTextView;
+//        TextView messengerTextView;
         TextView timeStampView;
         CircleImageView messengerImageView;
-
 
         public RecieverMsgHolder(View v) {
             super(v);
             messageTextView =  itemView.findViewById(R.id.text);
             messageImageView =  itemView.findViewById(R.id.messageImageView);
-            messengerTextView =  itemView.findViewById(R.id.userName);
+//            messengerTextView =  itemView.findViewById(R.id.userName);
             messengerImageView = itemView.findViewById(R.id.userProfilePic);
             timeStampView = itemView.findViewById(R.id.timeStamp);
         }
@@ -347,7 +352,6 @@ public class OneToOneChat extends AppCompatActivity
                     return R.layout.user_list_item;
                 else
                     return R.layout.user_list_item_received;
-//                return super.getItemViewType(position);
             }
 
             @Override
@@ -355,6 +359,12 @@ public class OneToOneChat extends AppCompatActivity
                                             int position,
                                             FriendlyMessage friendlyMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+
+//                if(friendlyMessage.getMsgStatus()!=null)
+//                {
+
+//                    receiverMsgRef.setValue("seen");
+//                }
 
             if(friendlyMessage.getText()!=null)
             {
@@ -367,9 +377,23 @@ public class OneToOneChat extends AppCompatActivity
                     messageViewHolder.messageTextView.setText(friendlyMessage.getText());
                     messageViewHolder.messageTextView.setVisibility(TextView.VISIBLE);
                     messageViewHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
-//                    messageViewHolder.messageImageView.setVisibility(ImageView.GONE);
 
-//                    messageViewHolder.messengerTextView.setText(friendlyMessage.getName());
+                    if(friendlyMessage.getMsgStatus() != null)
+                    {
+                        if(friendlyMessage.getMsgStatus().equals("seen"))
+                        {
+                            messageViewHolder.singleCheck.setVisibility(View.GONE);
+                            messageViewHolder.doubleCheckBlue.setVisibility(View.VISIBLE);
+                        }
+                        else
+                        {
+                            messageViewHolder.singleCheck.setVisibility(View.VISIBLE);
+                            messageViewHolder.doubleCheckBlue.setVisibility(View.GONE);
+                        }
+                    }
+
+                    messageViewHolder.messageImageView.setVisibility(ImageView.GONE);
+
 
                     if (friendlyMessage.getPhotoUrl() == null) {
                         messageViewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
@@ -408,6 +432,24 @@ public class OneToOneChat extends AppCompatActivity
             {
                 Log.i(TAG, "onBindViewHolder: HANDLE IMAGE");
             }
+
+                DatabaseReference x = mFirebaseAdapter.getRef(position);
+                final DatabaseReference receiverMsgRef = receiverChatRef.child(x.getKey()).getRef();//.child("msgStatus");
+                receiverMsgRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.hasChild("msgStatus"))
+                            receiverMsgRef.child("msgStatus").setValue("seen");
+                        else
+                            Log.i(TAG, "onDataChange: Not set ");
+                    }
+
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
 
 //                if(friendlyMessage.getName())
 //                if (friendlyMessage.getText() != null) {
@@ -524,14 +566,16 @@ public class OneToOneChat extends AppCompatActivity
 //                    }
 //                });
 
-
-//                timeStampKey.child("Timestamps").child(timeStampKey)
                 FriendlyMessage friendlyMessage = new
                         FriendlyMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
                         null,
-                        getCurrentTimeStamp());
+                        getCurrentTimeStamp(),
+                        "sent");
+
+//                if(friendlyMessage.getText().isEmpty())
+//                    return;
 
                 //                 Add message to notification branch
                 HashMap<String,String> notification_msg = new HashMap<>();
@@ -540,26 +584,35 @@ public class OneToOneChat extends AppCompatActivity
                 notification_msg.put("type","invitation");
                 notification_msg.put("msg",mMessageEditText.getText().toString());
 
-                senderChatRef.push().setValue(friendlyMessage);
-                receiverChatRef.push().setValue(friendlyMessage);
+               String msgPushedLocation =  senderChatRef.push().getKey();
+                senderChatRef.child(msgPushedLocation).setValue(friendlyMessage);
+                receiverChatRef.child(msgPushedLocation).setValue(friendlyMessage);
+
+                receiverChatRef.child(msgPushedLocation).child("msgStatus").removeValue();  // MsgStatus is not needed in receiever as receiver will set seen in sender node.
                 notificationRef.child(mUid).child(recieverUid).setValue(notification_msg);
 
 
-                Map<String,Object> lastChatMessage = new HashMap<>();
+                final Map<String,Object> lastChatMessage = new HashMap<>();
 
 //                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                       lastChatMessage.put("senderUid", mUid);
                       lastChatMessage.put("timeStamp", timeStampLocal);
                       lastChatMessage.put("name", recieverUsername);
-                      lastChatMessage.put("text","\u2713\u2713 "+mMessageEditText.getText().toString());
+                      lastChatMessage.put("text",mMessageEditText.getText().toString());
                       lastChatMessage.put("photoUrl", recieverPhotoUrl);
 
-                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage);
-                lastChatMessage.put("name",mUsername);
-                lastChatMessage.put("photoUrl",mPhotoUrl);
-                recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
+                recentChats.child(senderUid).child(recieverUid).setValue(lastChatMessage).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
 
-               mMessageEditText.setText("");
+                        lastChatMessage.put("name",mUsername);
+                        lastChatMessage.put("photoUrl",mPhotoUrl);
+                        recentChats.child(recieverUid).child(senderUid).setValue(lastChatMessage);
+
+                        mMessageEditText.setText("");
+                    }
+                });
+
             }
         });
 
@@ -751,7 +804,7 @@ public class OneToOneChat extends AppCompatActivity
                     Log.d(TAG, "Uri: " + uri.toString());
                     Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                     FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
-                            LOADING_IMAGE_URL,getCurrentTimeStamp());//,timeStamp);
+                            LOADING_IMAGE_URL,getCurrentTimeStamp(),"sent");//,timeStamp);
                     mFirebaseDatabaseReference.child(CONVERSATIONS).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
@@ -787,7 +840,7 @@ public class OneToOneChat extends AppCompatActivity
                             FriendlyMessage friendlyMessage =
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
-                                                    .toString(),getCurrentTimeStamp());//,timeStamp);
+                                                    .toString(),getCurrentTimeStamp(),"sent");//,timeStamp);
                             mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
                                     .setValue(friendlyMessage);
                         } else {

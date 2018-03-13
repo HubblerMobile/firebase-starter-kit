@@ -172,7 +172,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
 
                 Log.i(TAG, "onCreateViewHolder: "+viewType);
                 LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-                return new UserViewHolder(inflater.inflate(R.layout.user_list_item, parent, false));
+                return new UserViewHolder(inflater.inflate(R.layout.select_user_item, parent, false));
             }
 
 
@@ -307,38 +307,38 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
 //        }
 //    };
 
-    private ActionMode.Callback CreateGroupCallback = new ActionMode.Callback() {
-
-        @Override
-        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
-
-            actionMode.getMenuInflater().inflate(R.menu.menu_action_mode,menu);
-            actionMode.setTitle("DFS");
-            actionMode.setSubtitle("Participants selected");
-
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
-
-//            actionMode.setTitle("Create Group");
-//            actionMode.setSubtitle("0 of 10 selected") ;
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-
-            Toast.makeText(CreateGroup.this, "Trigger in Contextual Menu", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode actionMode) {
-            actionMode = null;
-        }
-    };
+//    private ActionMode.Callback CreateGroupCallback = new ActionMode.Callback() {
+//
+//        @Override
+//        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+//
+//            actionMode.getMenuInflater().inflate(R.menu.menu_action_mode,menu);
+//            actionMode.setTitle("DFS");
+//            actionMode.setSubtitle("Participants selected");
+//
+//            return true;
+//        }
+//
+//        @Override
+//        public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+//
+////            actionMode.setTitle("Create Group");
+////            actionMode.setSubtitle("0 of 10 selected") ;
+//            return false;
+//        }
+//
+//        @Override
+//        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+//
+//            Toast.makeText(CreateGroup.this, "Trigger in Contextual Menu", Toast.LENGTH_SHORT).show();
+//            return false;
+//        }
+//
+//        @Override
+//        public void onDestroyActionMode(ActionMode actionMode) {
+//            actionMode = null;
+//        }
+//    };
 
     private void setGrouUsers(final Map<String,Object> grpUsers,String grpName)
     {
