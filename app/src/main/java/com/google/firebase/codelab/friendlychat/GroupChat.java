@@ -175,7 +175,7 @@ public class GroupChat extends AppCompatActivity
         recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
         usersRef = mFirebaseDatabaseReference.child(USERS_LIST);
         Intent intent = getIntent();
-        grpName = intent.getStringExtra("grpName");
+        grpName = intent.getStringExtra("groupName");
         grpChatRef = conversationsRef.child(grpName);
 
             Toast.makeText(this, grpName+" is current chat group", Toast.LENGTH_SHORT).show();

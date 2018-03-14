@@ -55,6 +55,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
     private Map<String,Object> map_groupMembers = new HashMap<>();
 
     private String mUid;
+    private UserObject grpCreator = new UserObject();
     private TextInputLayout textInp_groupName;
     FloatingActionButton fab_createGroup;
     ActionMode actionMode;
@@ -343,7 +344,32 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
     private void setGrouUsers(final Map<String,Object> grpUsers,String grpName)
     {
         Log.i(TAG, "setGrouUsers: "+grpUsers);
+
         mFirebaseDatabaseReference.child("GroupUserDetails").child(grpName).setValue(grpUsers);
+        AddAdmintoNotificationDetails(grpName);
+    }
+    private void AddAdmintoNotificationDetails(final String grpName)
+    {
+        final Map<String,String> admin = new HashMap<>();
+
+        mFirebaseDatabaseReference.child("usersList").child(mUid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                grpCreator = dataSnapshot.getValue(UserObject.class);
+                admin.put("id",dataSnapshot.child("id").getValue().toString());
+                admin.put("name",dataSnapshot.child("name").getValue().toString());
+                admin.put("photoUrl",dataSnapshot.child("photoUrl").getValue().toString());
+                admin.put("status","admin");
+
+                mFirebaseDatabaseReference.child("GroupUserDetails").child(grpName).child(mUid).setValue(admin);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+
+        });
     }
     // Called by createGrp function
     private void AddGroupToDb(final String grpName) {

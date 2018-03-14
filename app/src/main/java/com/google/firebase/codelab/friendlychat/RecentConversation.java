@@ -259,7 +259,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                                    if(dataSnapshot.child("type").getValue().equals("Group"))
                                    {
                                        Intent myIntent = new Intent(RecentConversation.this, GroupChat.class);
-                                       myIntent.putExtra("grpName",dataSnapshot.child("name").getValue().toString());
+                                       myIntent.putExtra("groupName",dataSnapshot.child("name").getValue().toString());
                                        RecentConversation.this.startActivity(myIntent);
                                        return;
                                    }

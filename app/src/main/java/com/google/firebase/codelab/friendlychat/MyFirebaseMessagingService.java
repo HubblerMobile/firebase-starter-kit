@@ -75,6 +75,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(notification_title)
                 .setContentText(notification_msg)
+                .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
         Intent resultIntent = new Intent(click_action);
@@ -89,7 +90,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
             resultIntent.putExtra("grpName",grpName);
         }
 
-
+// sudesh to ikal working
+        // ikal to sudesh breaks
         PendingIntent resultPendingIntent =
                 PendingIntent.getActivity(
                         this,
