@@ -79,7 +79,7 @@ public class OneToOneChat extends AppCompatActivity
 
 
     private FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder> mFirebaseAdapter;
-    private int timeDelayForCheck = 1;
+    private int timeDelayForCheck = 2;
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
     private Map<String,String> userWhoAreTyping = new HashMap<>();
@@ -360,11 +360,6 @@ public class OneToOneChat extends AppCompatActivity
                                             FriendlyMessage friendlyMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
-//                if(friendlyMessage.getMsgStatus()!=null)
-//                {
-
-//                    receiverMsgRef.setValue("seen");
-//                }
 
             if(friendlyMessage.getText()!=null)
             {
@@ -433,8 +428,8 @@ public class OneToOneChat extends AppCompatActivity
                 Log.i(TAG, "onBindViewHolder: HANDLE IMAGE");
             }
 
-                DatabaseReference x = mFirebaseAdapter.getRef(position);
-                final DatabaseReference receiverMsgRef = receiverChatRef.child(x.getKey()).getRef();//.child("msgStatus");
+                DatabaseReference msgRef = mFirebaseAdapter.getRef(position);
+                final DatabaseReference receiverMsgRef = receiverChatRef.child(msgRef.getKey()).getRef();
                 receiverMsgRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -443,7 +438,6 @@ public class OneToOneChat extends AppCompatActivity
                         else
                             Log.i(TAG, "onDataChange: Not set ");
                     }
-
 
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
@@ -663,7 +657,7 @@ public class OneToOneChat extends AppCompatActivity
 
         if(isUserTyping) {
 
-            timeDelayForCheck=1;
+            timeDelayForCheck=2;
 
             typingStatusRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override

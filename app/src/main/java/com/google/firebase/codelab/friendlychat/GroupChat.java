@@ -3,6 +3,7 @@ package com.google.firebase.codelab.friendlychat;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -75,11 +76,12 @@ public class GroupChat extends AppCompatActivity
     private DatabaseReference receiverChatRef;
     private DatabaseReference recentChats;
     private DatabaseReference notificationRef;
+    private DatabaseReference groupChatStatus;
     private DatabaseReference usersRef;
 
 
     private FirebaseRecyclerAdapter<FriendlyMessage, RecyclerView.ViewHolder> mFirebaseAdapter;
-    private int timeDelayForCheck = 1;
+    private int timeDelayForCheck = 2;
     private boolean user_typing = false;
     private List<String> usersTyping = new ArrayList<String>();
     private Map<String,String> userWhoAreTyping = new HashMap<>();
@@ -339,8 +341,8 @@ public class GroupChat extends AppCompatActivity
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
 
 
-                if (friendlyMessage.getText() != null) {
-
+                if (friendlyMessage.getText() != null)
+                {
                     if(viewHolder. getItemViewType() == R.layout.user_list_item)
                     {
                         Log.i(TAG, "onBindViewHolder: View type is sender msg");
@@ -400,6 +402,37 @@ public class GroupChat extends AppCompatActivity
 //                  Handle Image view.
                 }
 
+                DatabaseReference msgRef = mFirebaseAdapter.getRef(position);
+                final DatabaseReference groupChatRef = grpChatRef.child(msgRef.getKey()).getRef();
+                groupChatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.hasChild("msgStatus"))
+                            groupChatRef.child("msgStatus").setValue("seen");
+                        else
+                            Log.i(TAG, "onDataChange: Not set ");
+                    }
+
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+//                groupChatStatus.addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(DatabaseError databaseError) {
+//
+//                    }
+//                });
+
+
 
 //                viewHolder.messengerTextView.setText(friendlyMessage.getName());
 //                if (friendlyMessage.getPhotoUrl() == null) {
@@ -412,6 +445,25 @@ public class GroupChat extends AppCompatActivity
 //                }
             }
         };
+
+        if (Build.VERSION.SDK_INT >= 11) {
+            mMessageRecyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v,
+                                           int left, int top, int right, int bottom,
+                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    if (bottom < oldBottom) {
+                        mMessageRecyclerView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                mMessageRecyclerView.smoothScrollToPosition(
+                                        mMessageRecyclerView.getAdapter().getItemCount() - 1);
+                            }
+                        }, 100);
+                    }
+                }
+            });
+        }
 
         mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
@@ -559,7 +611,7 @@ public class GroupChat extends AppCompatActivity
 
         if(isUserTyping) {
 
-            timeDelayForCheck=1;
+            timeDelayForCheck=2;
 
             typingStatusRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override

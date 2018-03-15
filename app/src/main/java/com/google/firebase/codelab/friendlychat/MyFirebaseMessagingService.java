@@ -15,6 +15,7 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -24,6 +25,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.View;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -68,6 +70,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
         String notification_icon = remoteMessage.getNotification().getIcon();
 //        Bitmap myIconBitMap = getBitmapFromURL(notification_icon);
 
+//        buttonClicked(View v);
+
+         final int NOTIFICATION_ID = 237;
+         int value = 0;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+
+            Notification.InboxStyle inboxStyle = new Notification.InboxStyle();
+        }
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+
+
 //        Bundle bundle = getIntent().getExtras();
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this,"notific id");
         notificationBuilder
@@ -108,6 +121,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
 
     }
 
+    private void buttonClicked(View v)
+    {
+
+    }
     private void showNotification(Map<String, String> payload) {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);

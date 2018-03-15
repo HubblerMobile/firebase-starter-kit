@@ -48,6 +48,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
 
     private DatabaseReference mFirebaseDatabaseReference;
     private DatabaseReference listOfUsersRef;
+    private DatabaseReference groupChatStatus;
     private DatabaseReference conversationsRef;
 
     private FirebaseAuth mFirebaseAuth;
@@ -369,6 +370,22 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
 
             }
 
+        });
+    }
+    private void AddGroupMembersToGroupSttus(String grpName) {
+
+//        groupChatStatus.child(grpName).child()
+        groupChatStatus.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
         });
     }
     // Called by createGrp function

@@ -19,6 +19,7 @@
         android:id="@+id/typingStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="7dp"
         android:visibility="visible"
         android:layout_above="@+id/linearLayout"
         android:textSize="@dimen/typing_indicator"
