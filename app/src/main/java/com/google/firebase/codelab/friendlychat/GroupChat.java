@@ -446,24 +446,24 @@ public class GroupChat extends AppCompatActivity
             }
         };
 
-        if (Build.VERSION.SDK_INT >= 11) {
-            mMessageRecyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-                @Override
-                public void onLayoutChange(View v,
-                                           int left, int top, int right, int bottom,
-                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                    if (bottom < oldBottom) {
-                        mMessageRecyclerView.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                mMessageRecyclerView.smoothScrollToPosition(
-                                        mMessageRecyclerView.getAdapter().getItemCount() - 1);
-                            }
-                        }, 100);
-                    }
-                }
-            });
-        }
+//        if (Build.VERSION.SDK_INT >= 11) {
+//            mMessageRecyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+//                @Override
+//                public void onLayoutChange(View v,
+//                                           int left, int top, int right, int bottom,
+//                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+//                    if (bottom < oldBottom) {
+//                        mMessageRecyclerView.postDelayed(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                mMessageRecyclerView.smoothScrollToPosition(
+//                                        mMessageRecyclerView.getAdapter().getItemCount() - 1);
+//                            }
+//                        }, 100);
+//                    }
+//                }
+//            });
+//        }
 
         mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override

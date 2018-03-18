@@ -399,7 +399,7 @@ public class CreateGroup extends AppCompatActivity implements GoogleApiClient.On
                     conversationsRef.child(grpName).setValue("No conversations Yet");
                     Intent myIntent = new Intent(CreateGroup.this, GroupChat.class);
 //                    myIntent.putExtra("sender", FirebaseAuth.getInstance().getCurrentUser().getUid());
-                    myIntent.putExtra("grpName",grpName);
+                    myIntent.putExtra("groupName",grpName);
                     CreateGroup.this.startActivity(myIntent);
                 }
                 else {
