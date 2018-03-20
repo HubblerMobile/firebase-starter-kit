@@ -1,5 +1,8 @@
 package com.google.firebase.codelab.friendlychat;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +12,9 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.RemoteInput;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -73,6 +79,10 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
     private String mPhotoUrl;
     public static final String CONVERSATIONS = "conversations";
 
+    private static final String KEY_TEXT_REPLY = "key_text_reply";
+    int mRequestCode = 1000;
+
+
     private FirebaseRecyclerAdapter<FriendlyMessage, RecentChatViewHolder> mFirebaseAdapter;
 
     public static class RecentChatViewHolder extends RecyclerView.ViewHolder {
@@ -119,6 +129,7 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
 
+//        createNotification();
 //        getCurrentUser();
         if(mFirebaseUser == null)
         {
@@ -311,6 +322,46 @@ public class RecentConversation extends AppCompatActivity implements GoogleApiCl
         });
 
         mRecentChatsRecyclerView.setAdapter(mFirebaseAdapter);
+    }
+
+    public void AddRemoteMessage()
+    {
+        String replyLabel = getString(R.string.reply_label);
+        RemoteInput remoteInput = new RemoteInput.Builder(KEY_TEXT_REPLY)
+                .setLabel(replyLabel)
+                .build();
+
+        Intent resultIntent = new Intent(this, NotificationReceiver.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(NotificationReceiver.class);
+        stackBuilder.addNextIntent(resultIntent);
+
+        PendingIntent resultPendingIntent =
+                stackBuilder.getPendingIntent(
+                        0,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+
+        NotificationCompat.Action action =
+                new NotificationCompat.Action.Builder(R.drawable.ic_send_arrow, replyLabel, resultPendingIntent)
+                        .addRemoteInput(remoteInput)
+                        .setAllowGeneratedReplies(true)
+                        .build();
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .addAction(action)
+                        .setAutoCancel(true)
+                        .setSmallIcon(R.drawable.ic_send_arrow)
+                        .setContentTitle("DevDeeds Says")
+                        .setContentText("Do you like my tutorials ?");
+
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        //Show it
+        mNotificationManager.notify(mRequestCode, mBuilder.build());
     }
 
     @Override

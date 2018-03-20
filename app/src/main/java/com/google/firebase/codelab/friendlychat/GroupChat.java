@@ -563,9 +563,6 @@ public class GroupChat extends AppCompatActivity
 
                 recentChats.child(mUid).child(grpName).setValue(lastChatMessage);
 
-
-
-
     // Add group message to recent chats of group members
                 mFirebaseDatabaseReference.child("GroupUserDetails").child(grpName).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -605,6 +602,21 @@ public class GroupChat extends AppCompatActivity
 
 
 
+    }
+
+    public void addReplyFromNotification(String msg,String groupName,String senderUid)
+    {
+        final Map<String,Object> lastChatMessage = new HashMap<>();
+        Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+
+        lastChatMessage.put("type", "Group");
+        lastChatMessage.put("senderUid", senderUid);
+        lastChatMessage.put("timeStamp", timeStamp);
+        lastChatMessage.put("name", groupName);
+        lastChatMessage.put("text",msg);
+        lastChatMessage.put("photoUrl", "https://image.freepik.com/free-icon/group-profile-users_318-41953.jpg");
+
+        recentChats.child(senderUid).child(grpName).setValue(lastChatMessage);
     }
 
     private void userIsTyping(boolean isUserTyping) {
