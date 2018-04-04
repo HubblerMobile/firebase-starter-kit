@@ -36,6 +36,7 @@ import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -98,7 +99,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
     @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
-
         String notification_title = remoteMessage.getData().get("title");
         String notification_msg = remoteMessage.getData().get("body");
 
@@ -108,10 +108,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
         String receiverId = remoteMessage.getData().get("receiver");
         String grpName = remoteMessage.getData().get("groupName");
         String profilePictureLink = remoteMessage.getData().get("icon");
+        String senderName = FirebaseAuth.getInstance().getCurrentUser().getDisplayName();
 
         Bitmap profilePicture = getBitmapFromURL(profilePictureLink);
 
-        createNotification(notification_title,notification_msg,profilePicture);
 
 
         Log.i(TAG, "onMessageReceived: Profile picture "+profilePictureLink);
@@ -121,6 +121,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
         Intent replyIntent = new Intent(this, NotificationReceiver.class);
         replyIntent.putExtra("groupName",grpName);
         replyIntent.putExtra("senderUid",senderId);
+        replyIntent.putExtra("senderName",senderName);
 
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -140,18 +141,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
             resultIntent = new Intent(this,OneToOneChat.class);
             resultIntent.putExtra("sender",senderId);
             resultIntent.putExtra("receiver",receiverId);
+            createNotification(notification_title,notification_msg,profilePicture);
         }
         else if( grpName!=null)
         {
             resultIntent = new Intent(this,GroupChat.class);
             resultIntent.putExtra("groupName",grpName);
+            createNotification(notification_title,notification_msg,profilePicture);
+
         }
         else {
             resultIntent = new Intent();
         }
-
-
-//        Intent replyIntent = new Intent( this, NotificationReceiver.class );
 
 
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
@@ -163,8 +164,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService{
 //                        resultIntent,
 //                        PendingIntent.FLAG_UPDATE_CURRENT
 //                );
-
-
 
         PendingIntent replyPendingIntent = PendingIntent.getActivity(this, 0, replyIntent, PendingIntent.FLAG_UPDATE_CURRENT );
 

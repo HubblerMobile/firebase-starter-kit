@@ -85,10 +85,11 @@ public class OneToOneChat extends AppCompatActivity
     private Map<String,String> userWhoAreTyping = new HashMap<>();
 
     private static final String TAG = "MainActivity";
-    public static final String CONVERSATIONS = "conversations";
-    public static final String TYPING_STATUS = "users_typing";
-    public static final String RECENT_CHATS = "recent_chats";
-    public static final String USERS_LIST = "usersList";
+    public static final String REF_CONVERSATIONS = "conversations";
+    public static final String REF_TYPING_STATUS = "users_typing";
+    public static final String REF_RECENT_CHATS = "recent_chats";
+    public static final String REF_USERS_LIST = "usersList";
+    public static final String REF_NOTIFICATION = "Notification";
     private static final int REQUEST_INVITE = 1;
     private static final int REQUEST_IMAGE = 2;
     private static final String LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif";
@@ -109,8 +110,6 @@ public class OneToOneChat extends AppCompatActivity
     private String grpName;
 
     private SharedPreferences mSharedPreferences;
-    private GoogleApiClient mGoogleApiClient;
-    private static final String MESSAGE_URL = "http://friendlychat.firebase.google.com/message/";
 
     private FloatingActionButton mSendButton;
     private RecyclerView mMessageRecyclerView;
@@ -146,32 +145,32 @@ public class OneToOneChat extends AppCompatActivity
         }
     }
 
+    /*
+        RecieverMessageHolder xml file: user_list_item_received
+        contains profilePicture
+     */
     public static class RecieverMsgHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         ImageView messageImageView;
-//        TextView messengerTextView;
         TextView timeStampView;
-        CircleImageView messengerImageView;
+        CircleImageView profilePicture;
 
         public RecieverMsgHolder(View v) {
             super(v);
             messageTextView =  itemView.findViewById(R.id.text);
             messageImageView =  itemView.findViewById(R.id.messageImageView);
-//            messengerTextView =  itemView.findViewById(R.id.userName);
-            messengerImageView = itemView.findViewById(R.id.userProfilePic);
+            profilePicture = itemView.findViewById(R.id.userProfilePic);
             timeStampView = itemView.findViewById(R.id.timeStamp);
         }
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        conversationsRef = mFirebaseDatabaseReference.child(CONVERSATIONS);            //Firebase message branch
-//        conversationsRef.keepSynced(true);
-        notificationRef = mFirebaseDatabaseReference.child("Notification");
-        typingStatusRef = mFirebaseDatabaseReference.child(TYPING_STATUS);          // Firebase typing stauts branch
-        recentChats = mFirebaseDatabaseReference.child(RECENT_CHATS);
-        usersRef = mFirebaseDatabaseReference.child(USERS_LIST);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        initializeFirebaseReference();
+
         Intent intent = getIntent();
         senderUid = intent.getStringExtra("sender");
         recieverUid = intent.getStringExtra("receiver");
@@ -180,36 +179,18 @@ public class OneToOneChat extends AppCompatActivity
 
         if((senderUid !=null && !senderUid.isEmpty()) && (recieverUid != null && !recieverUid.isEmpty()))
         {
-            usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
+            setReceiverNameOnToolbar();
 
-                    recieverUsername = dataSnapshot.child("name").getValue().toString();
-                    recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
-                    getSupportActionBar().setTitle(recieverUsername);
-//                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                    getSupportActionBar().setIcon(R.drawable.ic_account_circle_black_36dp);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-
-            Toast.makeText(this, senderUid +" :: "+ recieverUid, Toast.LENGTH_SHORT).show();
             senderChatRef = conversationsRef.child(senderUid +" chat with "+ recieverUid);
             receiverChatRef = conversationsRef.child(recieverUid+" chat with "+ senderUid);
 
-            setToolbar();
         }
         else if( grpName !=null && !grpName.isEmpty()) {
             Log.i(TAG, "onCreate: Group name available");
         }
 
         CheckTypingStatus();
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         getCurrentUser();
 
@@ -255,8 +236,7 @@ public class OneToOneChat extends AppCompatActivity
                 }
                 Object[] userTyping_arr = userWhoAreTyping.keySet().toArray();//java.lang.indexoutofboundException: invalid array index
                 Log.i(TAG, "onDataChange: Usertyping array is "+userTyping_arr.length);
-//                Collections.reverse(Arrays.asList(userTyping_arr));
-//                Log.i(TAG, "onDataChange: UserTyping array is "+userTyping_arr);
+
                 switch (userTyping_arr.length) {
                     case 0:
                         Log.i(TAG, "onDataChange: the array now is 0");
@@ -329,6 +309,7 @@ public class OneToOneChat extends AppCompatActivity
                                             .inflate(R.layout.user_list_item,viewGroup,false);
                         Log.i(TAG, "onCreateViewHolder: View Type is user list item");
                         return new MessageViewHolder(userListItem);
+
                     case R.layout.user_list_item_received:
                         View userListItemReceived = LayoutInflater.from(viewGroup.getContext())
                                 .inflate(R.layout.user_list_item_received,viewGroup,false);
@@ -357,35 +338,34 @@ public class OneToOneChat extends AppCompatActivity
             @Override
             protected void onBindViewHolder(final RecyclerView.ViewHolder viewHolder,
                                             int position,
-                                            FriendlyMessage friendlyMessage) {
-                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-
-
-            if(friendlyMessage.getText()!=null)
+                                            FriendlyMessage friendlyMessage)
             {
-                if(viewHolder. getItemViewType() == R.layout.user_list_item)
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                if(friendlyMessage.getText()!=null)
                 {
-                    Log.i(TAG, "onBindViewHolder: View type is sender msg");
-
-                    MessageViewHolder messageViewHolder = (MessageViewHolder)viewHolder;
-
-                    messageViewHolder.messageTextView.setText(friendlyMessage.getText());
-                    messageViewHolder.messageTextView.setVisibility(TextView.VISIBLE);
-                    messageViewHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
-
-                    if(friendlyMessage.getMsgStatus() != null)
+                    if(viewHolder.getItemViewType() == R.layout.user_list_item)
                     {
-                        if(friendlyMessage.getMsgStatus().equals("seen"))
+                        Log.i(TAG, "onBindViewHolder: View type is sender msg");
+
+                        MessageViewHolder messageViewHolder = (MessageViewHolder)viewHolder;
+
+                        messageViewHolder.messageTextView.setText(friendlyMessage.getText());
+                        messageViewHolder.messageTextView.setVisibility(TextView.VISIBLE);
+                        messageViewHolder.timeStampView.setText(getDataTimetoStamp(friendlyMessage.getTimestamp()));
+
+                        if(friendlyMessage.getMsgStatus() != null)
                         {
-                            messageViewHolder.singleCheck.setVisibility(View.GONE);
-                            messageViewHolder.doubleCheckBlue.setVisibility(View.VISIBLE);
+                            if(friendlyMessage.getMsgStatus().equals("seen"))
+                            {
+                                messageViewHolder.singleCheck.setVisibility(View.GONE);
+                                messageViewHolder.doubleCheckBlue.setVisibility(View.VISIBLE);
+                            }
+                            else
+                            {
+                                messageViewHolder.singleCheck.setVisibility(View.VISIBLE);
+                                messageViewHolder.doubleCheckBlue.setVisibility(View.GONE);
+                            }
                         }
-                        else
-                        {
-                            messageViewHolder.singleCheck.setVisibility(View.VISIBLE);
-                            messageViewHolder.doubleCheckBlue.setVisibility(View.GONE);
-                        }
-                    }
 
                     messageViewHolder.messageImageView.setVisibility(ImageView.GONE);
 
@@ -394,9 +374,9 @@ public class OneToOneChat extends AppCompatActivity
                         messageViewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
                                 R.drawable.ic_account_circle_black_36dp));
                     } else {
-//                        Glide.with(OneToOneChat.this)
-//                                .load(friendlyMessage.getPhotoUrl())
-//                                .into(messageViewHolder.messageImageView);
+                        Glide.with(OneToOneChat.this)
+                                .load(friendlyMessage.getPhotoUrl())
+                                .into(messageViewHolder.messageImageView);
                     }
                 }
                 else
@@ -414,18 +394,82 @@ public class OneToOneChat extends AppCompatActivity
 //                    recieverMsgHolder.messengerTextView.setText(friendlyMessage.getName());
 
                     if (friendlyMessage.getPhotoUrl() == null) {
-                        recieverMsgHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+                        recieverMsgHolder.profilePicture.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
                                 R.drawable.ic_account_circle_black_36dp));
                     } else {
                         Glide.with(OneToOneChat.this)
                                 .load(friendlyMessage.getPhotoUrl())
-                                .into(recieverMsgHolder.messengerImageView);
+                                .into(recieverMsgHolder.profilePicture);
                     }
                 }
             }
             else
             {
-                Log.i(TAG, "onBindViewHolder: HANDLE IMAGE");
+                String imageUrl = friendlyMessage.getImageUrl();
+
+                if(getItemViewType(position) == R.layout.user_list_item )
+                {
+                    final MessageViewHolder messageViewHolder = (MessageViewHolder) viewHolder;
+
+                    if (imageUrl.startsWith("gs://")) {
+                        StorageReference storageReference = FirebaseStorage.getInstance()
+                                .getReferenceFromUrl(imageUrl);
+                        storageReference.getDownloadUrl().addOnCompleteListener(
+                                new OnCompleteListener<Uri>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Uri> task) {
+                                        if (task.isSuccessful()) {
+                                            String downloadUrl = task.getResult().toString();
+                                            Glide.with(messageViewHolder.messageImageView.getContext())
+                                                    .load(downloadUrl)
+                                                    .into(messageViewHolder.messageImageView);
+                                        } else {
+                                            Log.w(TAG, "Getting download url was not successful.",
+                                                    task.getException());
+                                        }
+                                    }
+                                });
+                    } else {
+                        Glide.with(messageViewHolder.messageImageView.getContext())
+                                .load(friendlyMessage.getImageUrl())
+                                .into(messageViewHolder.messageImageView);
+                    }
+                    messageViewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
+                    messageViewHolder.messageTextView.setVisibility(TextView.GONE);
+                }
+                if(getItemViewType(position) == R.layout.user_list_item_received)
+                {
+                    final RecieverMsgHolder messageViewHolder = (RecieverMsgHolder) viewHolder;
+
+                    if (imageUrl.startsWith("gs://")) {
+                        StorageReference storageReference = FirebaseStorage.getInstance()
+                                .getReferenceFromUrl(imageUrl);
+                        storageReference.getDownloadUrl().addOnCompleteListener(
+                                new OnCompleteListener<Uri>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Uri> task) {
+                                        if (task.isSuccessful()) {
+                                            String downloadUrl = task.getResult().toString();
+                                            Glide.with(messageViewHolder.messageImageView.getContext())
+                                                    .load(downloadUrl)
+                                                    .into(messageViewHolder.messageImageView);
+                                        } else {
+                                            Log.w(TAG, "Getting download url was not successful.",
+                                                    task.getException());
+                                        }
+                                    }
+                                });
+                    } else {
+                        Glide.with(messageViewHolder.messageImageView.getContext())
+                                .load(friendlyMessage.getImageUrl())
+                                .into(messageViewHolder.messageImageView);
+                    }
+                    messageViewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
+                    messageViewHolder.messageTextView.setVisibility(TextView.GONE);
+                }
+                
+//                if(messageViewHolder)
+               
             }
 
                 DatabaseReference msgRef = mFirebaseAdapter.getRef(position);
@@ -459,12 +503,12 @@ public class OneToOneChat extends AppCompatActivity
 
 //                viewHolder.messengerTextView.setText(friendlyMessage.getName());
 //                if (friendlyMessage.getPhotoUrl() == null) {
-//                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
+//                    viewHolder.profilePicture.setImageDrawable(ContextCompat.getDrawable(OneToOneChat.this,
 //                            R.drawable.ic_account_circle_black_36dp));
 //                } else {
 //                    Glide.with(OneToOneChat.this)
 //                            .load(friendlyMessage.getPhotoUrl())
-//                            .into(viewHolder.messengerImageView);
+//                            .into(viewHolder.profilePicture);
 //                }
             }
         };
@@ -535,30 +579,9 @@ public class OneToOneChat extends AppCompatActivity
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Map<String, String> timeStamp = ServerValue.TIMESTAMP;
-//                String timeStampKey = mFirebaseDatabaseReference.child("Timestamps").push().getKey();
-//                mFirebaseDatabaseReference.child("Timestamps").child(timeStampKey).setValue(timeStamp);
 
                 long timeStampLocal = getCurrentTimeStamp();
                 Log.i(TAG, "onClick: "+timeStampLocal+" is the timestamp in system");
-//                java.util.Date time=new java.util.Date(timestamp);
-//       SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
-//
-//                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
-//                String currentDateTime = dateFormat.format(new Date());
-
-//                mFirebaseDatabaseReference.child("Timestamps").child(timeStampKey).addListenerForSingleValueEvent(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(DataSnapshot dataSnapshot) {
-//
-//
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(DatabaseError databaseError) {
-//
-//                    }
-//                });
 
                 FriendlyMessage friendlyMessage = new
                         FriendlyMessage(mMessageEditText.getText().toString(),
@@ -610,7 +633,7 @@ public class OneToOneChat extends AppCompatActivity
             }
         });
 
-        mAddMessageImageView = (ImageView) findViewById(R.id.addMessageImageView);
+        mAddMessageImageView = findViewById(R.id.addMessageImageView);
         mAddMessageImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -630,29 +653,45 @@ public class OneToOneChat extends AppCompatActivity
         }
     }
 
-    private void setToolbar() {
+    private void initializeFirebaseReference() {
 
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        conversationsRef = mFirebaseDatabaseReference.child(REF_CONVERSATIONS);            //Firebase message branch
+//        conversationsRef.keepSynced(true);
+        notificationRef = mFirebaseDatabaseReference.child(REF_NOTIFICATION);
+        typingStatusRef = mFirebaseDatabaseReference.child(REF_TYPING_STATUS);          // Firebase typing stauts branch
+        recentChats = mFirebaseDatabaseReference.child(REF_RECENT_CHATS);
+        usersRef = mFirebaseDatabaseReference.child(REF_USERS_LIST);
+    }
 
+    private void setReceiverNameOnToolbar() {
 
+        usersRef.child(recieverUid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                recieverUsername = dataSnapshot.child("name").getValue().toString();
+                recieverPhotoUrl = dataSnapshot.child("photoUrl").getValue().toString();
+                getSupportActionBar().setTitle(recieverUsername);
+//                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                getSupportActionBar().setIcon(R.drawable.ic_account_circle_black_36dp);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     public static long getCurrentTimeStamp(){
-//            Date date = new Date();
-//            java.sql.Timestamp ts = new java.sql.Timestamp(date.getTime());
-//            String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
-//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+
             long formattedDate = System.currentTimeMillis();
             Log.i(TAG, "getCurrentTimeStamp: "+System.currentTimeMillis());
             return formattedDate;
 
     }
 
-
-    private void SetOptionsFirebaseAdapter(DatabaseReference queryBranch) {
-
-
-    }
     private void userIsTyping(boolean isUserTyping) {
 
         if(isUserTyping) {
@@ -799,7 +838,7 @@ public class OneToOneChat extends AppCompatActivity
                     Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                     FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
                             LOADING_IMAGE_URL,getCurrentTimeStamp(),"sent");//,timeStamp);
-                    mFirebaseDatabaseReference.child(CONVERSATIONS).push()
+                    mFirebaseDatabaseReference.child(REF_CONVERSATIONS).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
                                 public void onComplete(DatabaseError databaseError,
@@ -835,9 +874,10 @@ public class OneToOneChat extends AppCompatActivity
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
                                                     .toString(),getCurrentTimeStamp(),"sent");//,timeStamp);
-                            mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
-                                    .setValue(friendlyMessage);
-                        } else {
+                            senderChatRef.child(key).setValue(friendlyMessage);
+                            receiverChatRef.child(key).setValue(friendlyMessage);
+                        } else
+                            {
                             Log.w(TAG, "Image upload task was not successful.",
                                     task.getException());
                         }

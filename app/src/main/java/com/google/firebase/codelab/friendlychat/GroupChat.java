@@ -150,7 +150,6 @@ public class GroupChat extends AppCompatActivity
     public static class RecieverMsgHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         ImageView messageImageView;
-        //        TextView messengerTextView;
         TextView timeStampView;
         CircleImageView messengerImageView;
 
@@ -167,6 +166,7 @@ public class GroupChat extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
@@ -185,7 +185,6 @@ public class GroupChat extends AppCompatActivity
 
 
         CheckTypingStatus();
-        super.onCreate(savedInstanceState);
 
         Toolbar mToolbar = findViewById(R.id.chatToolbar);
         mToolbar.setTitle(grpName);
@@ -309,14 +308,17 @@ public class GroupChat extends AppCompatActivity
                                 .inflate(R.layout.user_list_item,viewGroup,false);
                         Log.i(TAG, "onCreateViewHolder: View Type is user list item");
                         return new MessageViewHolder(userListItem);
+
                     case R.layout.user_list_item_received:
                         View userListItemReceived = LayoutInflater.from(viewGroup.getContext())
                                 .inflate(R.layout.user_list_item_received,viewGroup,false);
                         Log.i(TAG, "onCreateViewHolder: View type is recieved item");
                         return new RecieverMsgHolder(userListItemReceived);
+
                     default:
                         Log.i(TAG, "onCreateViewHolder: View type is unknown");
                 }
+
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
                 return new MessageViewHolder(inflater.inflate(R.layout.user_list_item, viewGroup, false));
             }
@@ -399,7 +401,69 @@ public class GroupChat extends AppCompatActivity
                         }
                     }
                 } else {
-//                  Handle Image view.
+//
+                    String imageUrl = friendlyMessage.getImageUrl();
+
+                    if(getItemViewType(position) == R.layout.user_list_item )
+                    {
+                        final MessageViewHolder messageViewHolder = (MessageViewHolder)viewHolder;
+
+                        if (imageUrl.startsWith("gs://")) {
+                            StorageReference storageReference = FirebaseStorage.getInstance()
+                                    .getReferenceFromUrl(imageUrl);
+                            storageReference.getDownloadUrl().addOnCompleteListener(
+                                    new OnCompleteListener<Uri>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Uri> task) {
+                                            if (task.isSuccessful()) {
+                                                String downloadUrl = task.getResult().toString();
+                                                Glide.with(messageViewHolder.messageImageView.getContext())
+                                                        .load(downloadUrl)
+                                                        .into(messageViewHolder.messageImageView);
+                                            } else {
+                                                Log.w(TAG, "Getting download url was not successful.",
+                                                        task.getException());
+                                            }
+                                        }
+                                    });
+                        } else {
+                            Glide.with(messageViewHolder.messageImageView.getContext())
+                                    .load(friendlyMessage.getImageUrl())
+                                    .into(messageViewHolder.messageImageView);
+                        }
+                        messageViewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
+                        messageViewHolder.messageTextView.setVisibility(TextView.GONE);
+                    }
+                    if(getItemViewType(position) == R.layout.user_list_item_received)
+                    {
+                        final RecieverMsgHolder messageViewHolder = (RecieverMsgHolder) viewHolder;
+
+                        if (imageUrl.startsWith("gs://")) {
+                            StorageReference storageReference = FirebaseStorage.getInstance()
+                                    .getReferenceFromUrl(imageUrl);
+                            storageReference.getDownloadUrl().addOnCompleteListener(
+                                    new OnCompleteListener<Uri>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Uri> task) {
+                                            if (task.isSuccessful()) {
+                                                String downloadUrl = task.getResult().toString();
+                                                Glide.with(messageViewHolder.messageImageView.getContext())
+                                                        .load(downloadUrl)
+                                                        .into(messageViewHolder.messageImageView);
+                                            } else {
+                                                Log.w(TAG, "Getting download url was not successful.",
+                                                        task.getException());
+                                            }
+                                        }
+                                    });
+                        } else {
+                            Glide.with(messageViewHolder.messageImageView.getContext())
+                                    .load(friendlyMessage.getImageUrl())
+                                    .into(messageViewHolder.messageImageView);
+                        }
+                        messageViewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
+                        messageViewHolder.messageTextView.setVisibility(TextView.GONE);
+                    }
                 }
 
                 DatabaseReference msgRef = mFirebaseAdapter.getRef(position);
@@ -436,34 +500,15 @@ public class GroupChat extends AppCompatActivity
 
 //                viewHolder.messengerTextView.setText(friendlyMessage.getName());
 //                if (friendlyMessage.getPhotoUrl() == null) {
-//                    viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
+//                    viewHolder.profilePicture.setImageDrawable(ContextCompat.getDrawable(GroupChat.this,
 //                            R.drawable.ic_account_circle_black_36dp));
 //                } else {
 //                    Glide.with(GroupChat.this)
 //                            .load(friendlyMessage.getPhotoUrl())
-//                            .into(viewHolder.messengerImageView);
+//                            .into(viewHolder.profilePicture);
 //                }
             }
         };
-
-//        if (Build.VERSION.SDK_INT >= 11) {
-//            mMessageRecyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-//                @Override
-//                public void onLayoutChange(View v,
-//                                           int left, int top, int right, int bottom,
-//                                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
-//                    if (bottom < oldBottom) {
-//                        mMessageRecyclerView.postDelayed(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                mMessageRecyclerView.smoothScrollToPosition(
-//                                        mMessageRecyclerView.getAdapter().getItemCount() - 1);
-//                            }
-//                        }, 100);
-//                    }
-//                }
-//            });
-//        }
 
         mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
@@ -489,7 +534,6 @@ public class GroupChat extends AppCompatActivity
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-//                Log.i(TAG, "beforeTextChanged: ");
             }
 
             @Override
@@ -587,7 +631,7 @@ public class GroupChat extends AppCompatActivity
             }
         });
 
-        mAddMessageImageView = (ImageView) findViewById(R.id.addMessageImageView);
+        mAddMessageImageView = findViewById(R.id.addMessageImageView);
         mAddMessageImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -598,25 +642,35 @@ public class GroupChat extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         });
-
-
-
-
     }
 
-    public void addReplyFromNotification(String msg,String groupName,String senderUid)
+    public void addReplyFromNotification(String msg,String groupName,String senderName,String senderUid)
     {
+        DatabaseReference temp_groupChatRef;
+        DatabaseReference temp_recentChats;
+        temp_groupChatRef = FirebaseDatabase.getInstance().getReference().child(CONVERSATIONS).child(groupName);
+        temp_recentChats = FirebaseDatabase.getInstance().getReference().child(RECENT_CHATS);
+
         final Map<String,Object> lastChatMessage = new HashMap<>();
         Map<String, String> timeStamp = ServerValue.TIMESTAMP;
 
-        lastChatMessage.put("type", "Group");
-        lastChatMessage.put("senderUid", senderUid);
-        lastChatMessage.put("timeStamp", timeStamp);
-        lastChatMessage.put("name", groupName);
+//        lastChatMessage.put("type", "Group");
+//        lastChatMessage.put("senderUid", senderUid);
+        lastChatMessage.put("msgStatus","sent");
+        lastChatMessage.put("timestamp", timeStamp);
+        lastChatMessage.put("name", senderName);
         lastChatMessage.put("text",msg);
-        lastChatMessage.put("photoUrl", "https://image.freepik.com/free-icon/group-profile-users_318-41953.jpg");
+        lastChatMessage.put("photoUrl","https://lh6.googleusercontent.com/-3r-95pt-CJo/AAAAAAAAAAI/AAAAAAAAAAA/AGi4gfw3flWrHMF7zTjHsSKQTSNmydDT_A/s96-c/photo.jpg");
 
-        recentChats.child(senderUid).child(grpName).setValue(lastChatMessage);
+//        FirebaseDatabase.getInstance().getReference().child("DumyPush").push().setValue(lastChatMessage);
+        temp_groupChatRef.push().setValue(lastChatMessage);
+
+        lastChatMessage.remove("msgStatus");
+
+        lastChatMessage.put("name",groupName);
+        lastChatMessage.put("senderUid",senderUid);
+        lastChatMessage.put("type","Group");
+        temp_recentChats.child(senderUid).child(groupName).setValue(lastChatMessage);
     }
 
     private void userIsTyping(boolean isUserTyping) {
@@ -649,7 +703,6 @@ public class GroupChat extends AppCompatActivity
 
     public String getDataTimeStamp(long timestamp){
         java.util.Date time=new java.util.Date(timestamp);
-//        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
         SimpleDateFormat pre = new SimpleDateFormat("HH:mm:ss");
 
         //Hear Define your returning date formate
@@ -658,7 +711,6 @@ public class GroupChat extends AppCompatActivity
 
     public String getDataTimetoStamp(long timestamp){
         java.util.Date time=new java.util.Date(timestamp);
-//        SimpleDateFormat pre = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy");
         SimpleDateFormat pre = new SimpleDateFormat("hh:mm a");
 
         //Hear Define your returning date formate
@@ -724,11 +776,7 @@ public class GroupChat extends AppCompatActivity
     }
 
     public static long getCurrentTimeStamp(){
-//            Date date = new Date();
-//            java.sql.Timestamp ts = new java.sql.Timestamp(date.getTime());
-//            String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
-//            String formattedDate = new SimpleDateFormat("EEE MM dd HH:mm:ss zzz yyyy").format(new Date());
+
         long formattedDate = System.currentTimeMillis();
         Log.i(TAG, "getCurrentTimeStamp: "+System.currentTimeMillis());
         return formattedDate;
@@ -815,13 +863,13 @@ public class GroupChat extends AppCompatActivity
                     @Override
                     public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                         if (task.isSuccessful()) {
-                            Map<String, String> timeStamp = ServerValue.TIMESTAMP;
+//                            Map<String, String> timeStamp = ServerValue.TIMESTAMP;
                             FriendlyMessage friendlyMessage =
                                     new FriendlyMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
                                                     .toString(),getCurrentTimeStamp(),"sent");//,timeStamp);
-                            mFirebaseDatabaseReference.child(CONVERSATIONS).child(key)
-                                    .setValue(friendlyMessage);
+                            mFirebaseDatabaseReference.child(CONVERSATIONS).child(grpName).child(key).setValue(friendlyMessage);
+
                         } else {
                             Log.w(TAG, "Image upload task was not successful.",
                                     task.getException());

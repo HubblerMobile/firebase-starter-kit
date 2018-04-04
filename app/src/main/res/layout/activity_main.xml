@@ -47,8 +47,9 @@
         android:orientation="horizontal">
         <ImageView
             android:id="@+id/addMessageImageView"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             ads:srcCompat="@drawable/ic_plus_black"/>
 
         <EditText
@@ -56,13 +57,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:layout_weight="1"/>
+            android:layout_weight="7"/>
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_send_arrow"
+            android:layout_weight="1"
             android:layout_margin="5dp"
             ads:fabSize="mini"/>
 

@@ -68,13 +68,7 @@ public class SignInActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_sign_in);
 
         // Assign fields
-        mSignInButton = (SignInButton) findViewById(R.id.sign_in_button);
-
-        mDisplayName = findViewById(R.id.reg_displayname);
-        mEmail = findViewById(R.id.reg_email);
-        mPassword = findViewById(R.id.reg_password);
-        mCreateBtn = findViewById(R.id.reg_button);
-
+        initviews();
         // Set click listeners
         mSignInButton.setOnClickListener(this);
         mFirebaseAuth = FirebaseAuth.getInstance();
@@ -90,6 +84,16 @@ public class SignInActivity extends AppCompatActivity implements
                 .build();
 
         // Initialize FirebaseAuth
+    }
+
+    private void initviews() {
+        mSignInButton = (SignInButton) findViewById(R.id.sign_in_button);
+
+        mDisplayName = findViewById(R.id.reg_displayname);
+        mEmail = findViewById(R.id.reg_email);
+        mPassword = findViewById(R.id.reg_password);
+        mCreateBtn = findViewById(R.id.reg_button);
+
     }
 
     private void register_user(String displayName, String email, String password) {

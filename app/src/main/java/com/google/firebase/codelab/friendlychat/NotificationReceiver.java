@@ -25,8 +25,6 @@ public class NotificationReceiver extends AppCompatActivity{
     // mRequestCode allows you to update the notification.
     int mRequestCode = 1000;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -51,12 +49,14 @@ public class NotificationReceiver extends AppCompatActivity{
         Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
         String groupName = intent.getStringExtra("groupName");
         String senderUid = intent.getStringExtra("senderUid");
+        String senderName = intent.getStringExtra("senderName");
+
         Log.i("groupName ", "Group Name: "+groupName);
         if (remoteInput != null) {
 
 
             CharSequence reply = remoteInput.getCharSequence(KEY_TEXT_REPLY);
-            groupChat.addReplyFromNotification(reply.toString(),groupName,senderUid);
+            groupChat.addReplyFromNotification(reply.toString(),groupName,senderName,senderUid);
 
             return reply;
         }
